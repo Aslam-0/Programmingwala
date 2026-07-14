@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Smile, Award, CheckCircle, Clock, GraduationCap, X, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import EnrollCourseModal from '../components/EnrollCourseModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -48,8 +49,32 @@ export default function Programs() {
   const [enrollCourse, setEnrollCourse] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleEnroll = (course) => {
+  const handleEnroll = async (course) => {
+    const isFree = !course.price || Number(course.price) <= 0;
+
+    if (isFree) {
+      if (user) {
+        // User is logged in: silently call the backend to enroll the user so their progress tracks
+        try {
+          const token = localStorage.getItem('token');
+          await fetch(`/api/lms/courses/${course._id}/enroll`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (err) {
+          console.error('Silent enrollment error:', err);
+        }
+      }
+      // Go straight to the course workspace/learning page (works for guest users too as free courses have public access)
+      navigate(`/lms/learn/${course._id}`);
+      return;
+    }
+
     if (!user) {
       alert('Please log in to enroll in a course.');
       return;
