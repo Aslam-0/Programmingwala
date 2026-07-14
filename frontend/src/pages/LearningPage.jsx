@@ -339,6 +339,8 @@ const LearningPage = () => {
               selectedLesson={selectedLesson}
               onLessonSelect={handleLessonSelect}
               enrollment={enrollment}
+              isFree={isFree}
+              isAdmin={isAdmin}
             />
           </div>
 

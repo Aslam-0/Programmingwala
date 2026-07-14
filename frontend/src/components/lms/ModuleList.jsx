@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, PlayCircle, CheckCircle, Lock } from 'lucide-react';
 
-const ModuleList = ({ modules, selectedLesson, onLessonSelect, enrollment }) => {
+const ModuleList = ({ modules, selectedLesson, onLessonSelect, enrollment, isFree, isAdmin }) => {
   const [expandedModules, setExpandedModules] = useState({});
 
   const toggleModule = (moduleId) => {
@@ -16,7 +16,10 @@ const ModuleList = ({ modules, selectedLesson, onLessonSelect, enrollment }) => 
   };
 
   const isLessonLocked = (lesson) => {
-    // Check if lesson is free or user is enrolled
+    // If course is free or user is admin, nothing is locked
+    if (isFree || isAdmin) return false;
+    
+    // Check if individual lesson is free or user is enrolled
     if (lesson.isFree) return false;
     if (!enrollment) return true;
     

@@ -233,13 +233,14 @@ const VideoPlayer = ({
   if (isEmbedVideo) {
     let embedUrl = '';
     if (ytId) {
-      embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&controls=1&showinfo=0`;
+      // modestbranding=1 rel=0 and playlist=ytId disables related videos from external channels and hides logo
+      embedUrl = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&controls=1&showinfo=0&playlist=${ytId}`;
     } else if (vimeoId) {
       embedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=1`;
     }
 
     return (
-      <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/5">
+      <div className="relative w-full aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white border-opacity-5">
         <iframe
           src={embedUrl}
           className="absolute inset-0 w-full h-full border-0"
@@ -265,7 +266,7 @@ const VideoPlayer = ({
   return (
     <div
       ref={containerRef}
-      className="relative bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video border border-white/5"
+      className="relative bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video border border-white border-opacity-5"
       onMouseMove={handleMouseMove}
       onMouseLeave={() => {
         if (isPlaying && showControls) {
@@ -297,9 +298,10 @@ const VideoPlayer = ({
             type="range"
             min="0"
             max="100"
+            // We use bg-white bg-opacity-20 to avoid index.css glob class matching overrides
             value={(currentTime / duration) * 100 || 0}
             onChange={handleSeek}
-            className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer outline-none transition-all hover:h-1.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#FF7043] hover:[&::-webkit-slider-thumb]:scale-110"
+            className="w-full h-1 bg-white bg-opacity-20 rounded-lg appearance-none cursor-pointer outline-none transition-all hover:h-1.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#FF7043] hover:[&::-webkit-slider-thumb]:scale-110"
           />
           <div className="flex justify-between text-[11px] font-bold text-slate-300 mt-2">
             <span>{formatTime(currentTime)}</span>
@@ -313,7 +315,7 @@ const VideoPlayer = ({
             {/* Play/Pause */}
             <button
               onClick={togglePlay}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
             >
               {isPlaying ? (
                 <Pause className="w-5 h-5 text-white fill-white" />
@@ -325,7 +327,7 @@ const VideoPlayer = ({
             {/* Skip Back */}
             <button
               onClick={() => skipBackward()}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
             >
               <SkipBack className="w-4 h-4 text-white" />
             </button>
@@ -333,7 +335,7 @@ const VideoPlayer = ({
             {/* Skip Forward */}
             <button
               onClick={() => skipForward()}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
             >
               <SkipForward className="w-4 h-4 text-white" />
             </button>
@@ -342,7 +344,7 @@ const VideoPlayer = ({
             <div className="flex items-center space-x-2">
               <button
                 onClick={toggleMute}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+                className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
               >
                 {isMuted || volume === 0 ? (
                   <VolumeX className="w-4 h-4 text-white" />
@@ -358,7 +360,7 @@ const VideoPlayer = ({
                 step="0.1"
                 value={isMuted ? 0 : volume}
                 onChange={handleVolumeChange}
-                className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+                className="w-16 h-1 bg-white bg-opacity-20 rounded-lg appearance-none cursor-pointer outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
               />
             </div>
           </div>
@@ -368,13 +370,13 @@ const VideoPlayer = ({
             <div className="relative">
               <button
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                className="px-2.5 py-1 bg-white/10 text-white text-[10px] font-extrabold rounded-lg hover:bg-white/20 transition-colors outline-none"
+                className="px-2.5 py-1 bg-white bg-opacity-10 text-white text-[10px] font-extrabold rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors outline-none"
               >
                 {playbackRate}x
               </button>
               
               {showSpeedMenu && (
-                <div className="absolute bottom-full right-0 mb-2 bg-slate-900/95 border border-white/5 rounded-2xl shadow-xl py-2 min-w-28 z-50">
+                <div className="absolute bottom-full right-0 mb-2 bg-slate-900/95 border border-white border-opacity-5 rounded-2xl shadow-xl py-2 min-w-28 z-50">
                   {playbackRates.map((rate) => (
                     <button
                       key={rate}
@@ -382,7 +384,7 @@ const VideoPlayer = ({
                         setPlaybackRate(rate);
                         setShowSpeedMenu(false);
                       }}
-                      className={`block w-full px-4 py-2 text-[10px] font-bold text-left hover:bg-white/5 transition-colors ${
+                      className={`block w-full px-4 py-2 text-[10px] font-bold text-left hover:bg-white hover:bg-opacity-5 transition-colors ${
                         playbackRate === rate
                           ? 'text-[#FF7043]'
                           : 'text-gray-300'
@@ -398,7 +400,7 @@ const VideoPlayer = ({
             {/* Picture in Picture */}
             <button
               onClick={togglePictureInPicture}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
               title="Picture in Picture"
             >
               <PictureInPicture className="w-4 h-4 text-white" />
@@ -407,7 +409,7 @@ const VideoPlayer = ({
             {/* Settings */}
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
               title="Settings"
             >
               <Settings className="w-4 h-4 text-white" />
@@ -416,7 +418,7 @@ const VideoPlayer = ({
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors outline-none"
+              className="p-2 hover:bg-white hover:bg-opacity-10 rounded-full transition-colors outline-none"
               title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? (
@@ -431,11 +433,11 @@ const VideoPlayer = ({
       
       {/* Settings popup panel */}
       {showSettings && (
-        <div className="absolute bottom-20 right-6 bg-slate-950/95 border border-white/5 rounded-2xl shadow-xl p-4 min-w-40 z-50 text-[10px] font-bold">
+        <div className="absolute bottom-20 right-6 bg-slate-950/95 border border-white border-opacity-5 rounded-2xl shadow-xl p-4 min-w-40 z-50 text-[10px] font-bold">
           <div className="space-y-3">
             <div>
               <label className="block text-slate-400 mb-1">Quality</label>
-              <select className="w-full bg-white/5 border border-white/5 text-white rounded-lg px-2.5 py-1.5 outline-none">
+              <select className="w-full bg-white bg-opacity-5 border border-white border-opacity-5 text-white rounded-lg px-2.5 py-1.5 outline-none">
                 <option>Auto</option>
                 <option>1080p</option>
                 <option>720p</option>
