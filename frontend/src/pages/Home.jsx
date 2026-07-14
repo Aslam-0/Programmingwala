@@ -102,31 +102,45 @@ export default function Home() {
               transition={{ duration: 0.6, ease: 'easeOut' }}
               className="space-y-5 text-center lg:text-left"
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold border rounded-full border-white/15 bg-white/10 backdrop-blur-sm">
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-300" />
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-full backdrop-blur-sm"
+                style={{ border: '1px solid rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.12)', color: '#ffffff' }}
+              >
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: '#67e8f9' }} />
                 <span>Future-ready Java & C++ academy</span>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.4rem] font-black leading-[1.15] tracking-tight">
+              <h1
+                className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.4rem] font-black leading-[1.15] tracking-tight"
+                style={{ color: '#ffffff' }}
+              >
                 Master Java & C++ with high-impact coding training.
               </h1>
 
-              <p className="max-w-xl mx-auto text-sm sm:text-base md:text-lg text-slate-300 lg:mx-0">
+              <p className="max-w-xl mx-auto text-sm sm:text-base md:text-lg lg:mx-0" style={{ color: '#cbd5e1' }}>
                 Algorithms, data structures, OOP, competitive coding, and system design — through immersive mentorship and live projects.
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-2">
-                <Link to="/contact" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-full bg-cyan-400 text-slate-950 hover:bg-cyan-300 transition-colors">
+                <Link
+                  to="/contact"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-full transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: '#22d3ee', color: '#0f172a' }}
+                >
                   Start Coding Today <ArrowRight className="w-4 h-4" />
                 </Link>
-                <Link to="/programs" className="w-full sm:w-auto px-6 py-3 font-semibold text-center text-white border rounded-full border-white/20 hover:bg-white/10 transition-colors">
+                <Link
+                  to="/programs"
+                  className="w-full sm:w-auto px-6 py-3 font-semibold text-center rounded-full transition-opacity hover:opacity-80"
+                  style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.25)' }}
+                >
                   Explore Academy
                 </Link>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-5 text-xs sm:text-sm text-slate-300 pt-1">
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Live debugging & compilation labs</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Competitive coding practice</div>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 sm:gap-5 text-xs sm:text-sm pt-1" style={{ color: '#cbd5e1' }}>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: '#34d399' }} /> Live debugging & compilation labs</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: '#34d399' }} /> Competitive coding practice</div>
               </div>
             </motion.div>
 
@@ -140,28 +154,39 @@ export default function Home() {
               {/* Stats Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3">
                 {stats.map((stat) => (
-                  <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4 text-center">
-                    <div className="text-2xl sm:text-3xl font-black text-cyan-300">{stat.value}</div>
-                    <div className="text-[10px] sm:text-xs uppercase tracking-widest text-slate-400 mt-1">{stat.label}</div>
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl backdrop-blur-sm p-4 text-center"
+                    style={{ border: '1px solid rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  >
+                    <div className="text-2xl sm:text-3xl font-black" style={{ color: '#67e8f9' }}>{stat.value}</div>
+                    <div className="text-[10px] sm:text-xs uppercase tracking-widest mt-1" style={{ color: '#94a3b8' }}>{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               {/* Featured Tracks Card */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
-                <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-cyan-300">Featured Tracks</p>
-                <div className="w-16 h-0.5 mt-2 rounded-full bg-gradient-to-r from-cyan-400 to-indigo-400" />
+              <div
+                className="rounded-2xl backdrop-blur-sm p-4"
+                style={{ border: '1px solid rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.08)' }}
+              >
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest" style={{ color: '#67e8f9' }}>Featured Tracks</p>
+                <div className="w-16 h-0.5 mt-2 rounded-full" style={{ background: 'linear-gradient(to right, #22d3ee, #818cf8)' }} />
                 <div className="mt-4 space-y-2.5">
                   {courses.slice(0, 3).map((course) => {
                     const Icon = course.icon;
                     return (
-                      <div key={course.name} className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/5 p-3 hover:bg-white/10 transition-colors">
-                        <div className="p-2 rounded-full bg-cyan-400/10 text-cyan-300 shrink-0">
+                      <div
+                        key={course.name}
+                        className="flex items-center gap-3 rounded-xl p-3 transition-opacity hover:opacity-90"
+                        style={{ border: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(255,255,255,0.06)' }}
+                      >
+                        <div className="p-2 rounded-full shrink-0" style={{ backgroundColor: 'rgba(34,211,238,0.1)', color: '#67e8f9' }}>
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-sm text-white truncate">{course.name}</h3>
-                          <p className="text-xs text-slate-400">{course.badge}</p>
+                          <h3 className="font-semibold text-sm truncate" style={{ color: '#ffffff' }}>{course.name}</h3>
+                          <p className="text-xs" style={{ color: '#94a3b8' }}>{course.badge}</p>
                         </div>
                       </div>
                     );
