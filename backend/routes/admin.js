@@ -22,7 +22,7 @@ import { getCalculatedFees } from '../utils/feeCalculator.js';
 import { generateLibraryNotePdf } from '../utils/notePdf.js';
 import { protect, authorize } from '../middleware/auth.js';
 import mockStore from '../config/mockStore.js';
-import { uploadGallery, uploadAdmissions, uploadNotes, uploadVideo } from '../middleware/upload.js';
+import { uploadGallery, uploadAdmissions, uploadNotes, uploadMaterial, uploadVideo } from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -1081,6 +1081,33 @@ router.delete('/library-notes/:id', async (req, res) => {
   }
 });
 
+// Upload Course/Module/Lesson Study Material PDF or Resource
+router.post('/upload-material', uploadMaterial.single('materialFile'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Please select a study material file to upload.' });
+    }
+
+    const fileUrl = `/uploads/${req.file.filename}`;
+    const name = req.file.originalname;
+    const ext = name.split('.').pop().toLowerCase();
+    const size = req.file.size;
+
+    res.status(200).json({
+      success: true,
+      message: 'Study material uploaded successfully!',
+      data: {
+        name,
+        url: fileUrl,
+        type: ext,
+        size
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Create a fee invoice
 router.post('/fees', async (req, res) => {
   const { studentId, amount, term, dueDate } = req.body;
@@ -1698,13 +1725,14 @@ router.get('/courses/:courseId/modules', async (req, res) => {
 // Create a module
 router.post('/courses/:courseId/modules', async (req, res) => {
   try {
-    const { title, description, order } = req.body;
+    const { title, description, order, attachments } = req.body;
     const payload = {
       course: req.params.courseId,
       title,
       description: description || '',
       order: order ? Number(order) : 0,
-      isPublished: true
+      isPublished: true,
+      attachments: attachments || []
     };
     if (mockStore.isMock) {
       const module = await mockStore.create('modules', { ...payload, createdAt: new Date() });
@@ -1819,8 +1847,18 @@ router.patch('/courses/:id/publish', async (req, res) => {
 // Create a lesson with video upload
 router.post('/modules/:moduleId/lessons', uploadVideo.single('videoFile'), async (req, res) => {
   try {
-    const { title, description, content, videoUrl, videoDuration, order, isPublished } = req.body;
+    const { title, description, content, videoUrl, videoDuration, order, isPublished, attachments } = req.body;
     
+    // Parse attachments if stringified
+    let attachmentsData = [];
+    if (attachments) {
+      try {
+        attachmentsData = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+      } catch (e) {
+        console.error('Error parsing attachments in create lesson:', e);
+      }
+    }
+
     // Get module to get course id
     let module;
     if (mockStore.isMock) {
@@ -1858,7 +1896,8 @@ router.post('/modules/:moduleId/lessons', uploadVideo.single('videoFile'), async
       videoUrl: finalVideoUrl,
       videoDuration: videoDuration ? Number(videoDuration) : 0,
       order: order ? Number(order) : 0,
-      isPublished: isPublished !== undefined ? isPublished === 'true' : true
+      isPublished: isPublished !== undefined ? isPublished === 'true' : true,
+      attachments: attachmentsData
     };
 
     if (mockStore.isMock) {
@@ -1875,15 +1914,25 @@ router.post('/modules/:moduleId/lessons', uploadVideo.single('videoFile'), async
 // Update a lesson
 router.put('/lessons/:id', uploadVideo.single('videoFile'), async (req, res) => {
   try {
-    const { title, description, content, videoUrl, videoDuration, order, isPublished } = req.body;
+    const { title, description, content, videoUrl, videoDuration, order, isPublished, attachments } = req.body;
     
+    let attachmentsData;
+    if (attachments !== undefined) {
+      try {
+        attachmentsData = typeof attachments === 'string' ? JSON.parse(attachments) : attachments;
+      } catch (e) {
+        console.error('Error parsing attachments in update lesson:', e);
+      }
+    }
+
     let updateData = {
       ...(title && { title }),
       ...(description !== undefined && { description }),
       ...(content !== undefined && { content }),
       ...(videoDuration !== undefined && { videoDuration: Number(videoDuration) }),
       ...(order !== undefined && { order: Number(order) }),
-      ...(isPublished !== undefined && { isPublished: isPublished === 'true' })
+      ...(isPublished !== undefined && { isPublished: isPublished === 'true' }),
+      ...(attachmentsData !== undefined && { attachments: attachmentsData })
     };
 
     if (req.file) {

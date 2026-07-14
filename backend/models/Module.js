@@ -14,6 +14,12 @@ const ModuleSchema = new mongoose.Schema({
     ref: 'Course',
     required: true
   },
+  attachments: [{
+    name: String,
+    url: String,
+    type: String, // pdf, doc, ppt, etc.
+    size: Number
+  }],
   order: {
     type: Number,
     default: 0

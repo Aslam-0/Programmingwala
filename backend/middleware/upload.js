@@ -74,6 +74,16 @@ const videoFilter = (req, file, cb) => {
 
 const memoryStorage = multer.memoryStorage();
 
+const materialFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExts = ['.pdf', '.zip', '.rar', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.png', '.jpg', '.jpeg', '.txt'];
+  if (allowedExts.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type for study material. Only PDF, Office, ZIP, and images are allowed.'), false);
+  }
+};
+
 export const uploadGallery = multer({
   storage,
   fileFilter: galleryFilter,
@@ -90,6 +100,12 @@ export const uploadNotes = multer({
   storage,
   fileFilter: notesFilter,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+export const uploadMaterial = multer({
+  storage,
+  fileFilter: materialFilter,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
 });
 
 export const uploadVideo = multer({

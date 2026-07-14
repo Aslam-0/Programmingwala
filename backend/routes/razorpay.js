@@ -77,6 +77,56 @@ async function resolveCourse(courseId, courseTitle, amount) {
   return { coursePrice, resolvedTitle };
 }
 
+async function enrollStudentInCourse(userId, courseId, paymentId) {
+  if (!userId || !courseId) return;
+  try {
+    if (mockStore.isMock) {
+      if (!Array.isArray(mockStore.enrollments)) {
+        mockStore.enrollments = [];
+      }
+      // Check if already enrolled in mock mode
+      const exists = mockStore.enrollments.some(e => String(e.user) === String(userId) && String(e.course) === String(courseId));
+      if (!exists) {
+        await mockStore.create('enrollments', {
+          user: String(userId),
+          course: String(courseId),
+          paymentStatus: 'paid',
+          status: 'active',
+          paymentId: paymentId || '',
+          enrolledAt: new Date()
+        });
+        console.log(`Mock: Enrolled user ${userId} in course ${courseId}`);
+      }
+      return;
+    }
+
+    const CourseEnrollment = (await import('../models/CourseEnrollment.js')).default;
+    const Course = (await import('../models/Course.js')).default;
+
+    const existing = await CourseEnrollment.findOne({ user: userId, course: courseId });
+    if (!existing) {
+      await CourseEnrollment.create({
+        user: userId,
+        course: courseId,
+        paymentStatus: 'paid',
+        status: 'active',
+        paymentId: paymentId || '',
+        enrolledAt: new Date()
+      });
+      // Increment totalEnrollments
+      await Course.findByIdAndUpdate(courseId, { $inc: { totalEnrollments: 1 } });
+      console.log(`MongoDB: Enrolled user ${userId} in course ${courseId}`);
+    } else if (existing.paymentStatus !== 'paid') {
+      existing.paymentStatus = 'paid';
+      existing.paymentId = paymentId || '';
+      await existing.save();
+      console.log(`MongoDB: Updated payment status to paid for user ${userId} in course ${courseId}`);
+    }
+  } catch (error) {
+    console.error('Error enrolling student after payment:', error);
+  }
+}
+
 async function createCoursePaymentRecord(payload) {
   if (mockStore.isMock) {
     if (!Array.isArray(mockStore[PAYMENT_COLLECTION])) {
@@ -244,6 +294,10 @@ router.post('/verify', async (req, res) => {
       paidAt: new Date(),
       ...safeMeta
     });
+
+    if (payment) {
+      await enrollStudentInCourse(payment.userId, payment.courseId, razorpayPaymentId);
+    }
 
     res.json({
       success: true,
@@ -480,6 +534,7 @@ router.post('/webhook', async (req, res) => {
         });
         if (payment) {
           console.log(`Razorpay: Course payment ${payment.paymentRef || payment._id} marked paid.`);
+          await enrollStudentInCourse(payment.userId, payment.courseId, paymentId);
         }
       } else if (type === 'installment' && feeId) {
         if (mockStore.isMock) {

@@ -437,49 +437,70 @@ const LearningPage = () => {
             )}
 
             {/* Downloadable Resources Cards */}
-            <div className={`p-6 md:p-8 rounded-3xl border transition-all duration-300 ${
-              isDark ? 'bg-slate-900/60 border-white/5' : 'bg-white border-orange-100/50 shadow-sm'
-            }`}>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-base font-black text-slate-800 dark:text-white">
-                  Lesson Materials
-                </h3>
-                <button className="text-xs font-black text-brandCoral flex items-center">
-                  <Download className="w-4 h-4 mr-2" />
-                  <span>DOWNLOAD ALL (.ZIP)</span>
-                </button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ResourceCard
-                  icon={<FileText className="w-4 h-4" />}
-                  title="Lesson Notes PDF"
-                  type="PDF"
-                  size="2.1 MB"
-                />
-                
-                <ResourceCard
-                  icon={<FileText className="w-4 h-4" />}
-                  title="Practice Worksheets"
-                  type="PDF"
-                  size="3.4 MB"
-                />
-                
-                <ResourceCard
-                  icon={<FileText className="w-4 h-4" />}
-                  title="Reference Guide"
-                  type="PDF"
-                  size="1.8 MB"
-                />
-                
-                <ResourceCard
-                  icon={<Download className="w-4 h-4" />}
-                  title="Activity Templates"
-                  type="ZIP"
-                  size="12.5 MB"
-                />
-              </div>
-            </div>
+            {(() => {
+              const parentModule = selectedLesson
+                ? modules.find(m => m.lessons?.some(l => l._id === selectedLesson._id))
+                : null;
+              const moduleAtts = parentModule?.attachments || [];
+              const lessonAtts = selectedLesson?.attachments || [];
+              const allAtts = [
+                ...moduleAtts.map(a => ({ ...a, origin: 'Module Material' })),
+                ...lessonAtts.map(a => ({ ...a, origin: 'Lesson Material' }))
+              ];
+
+              const formatBytes = (bytes) => {
+                if (!bytes) return '';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+              };
+
+              const handleDownloadAll = () => {
+                allAtts.forEach(att => {
+                  const link = document.createElement('a');
+                  link.href = att.url;
+                  link.download = att.name || 'resource';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                });
+              };
+
+              return (
+                <div className={`p-6 md:p-8 rounded-3xl border transition-all duration-300 ${
+                  isDark ? 'bg-slate-900/60 border-white/5' : 'bg-white border-orange-100/50 shadow-sm'
+                }`}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-base font-black text-slate-800 dark:text-white">
+                      Lesson Materials
+                    </h3>
+                    {allAtts.length > 0 && (
+                      <button onClick={handleDownloadAll} className="text-xs font-black text-brandCoral flex items-center hover:opacity-80 transition-opacity">
+                        <Download className="w-4 h-4 mr-2" />
+                        <span>DOWNLOAD ALL</span>
+                      </button>
+                    )}
+                  </div>
+                  
+                  {allAtts.length === 0 ? (
+                    <p className="text-sm text-slate-400 dark:text-slate-500 italic py-4 text-center">No study materials uploaded for this lesson.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {allAtts.map((att, idx) => (
+                        <ResourceCard
+                          key={idx}
+                          title={`${att.name} (${att.origin})`}
+                          type={att.type || 'file'}
+                          size={formatBytes(att.size)}
+                          downloadUrl={att.url}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Lesson Navigation footer controls */}
             <div className="flex justify-between items-center pt-4">

@@ -8,6 +8,77 @@ import CollectPaymentModal from '../components/CollectPaymentModal.jsx';
 
 const COURSE_OPTIONS = ['Java Development', 'MERN Developer', 'Python Developer', 'Frontend Developer'];
 
+function AttachmentManager({ attachments = [], onAdd, onDelete }) {
+  const [uploading, setUploading] = useState(false);
+
+  const formatSize = (bytes) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('materialFile', file);
+      const res = await fetch('/api/admin/upload-material', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        onAdd(data.data);
+      } else {
+        alert(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-2 border border-slate-200/60 p-3 rounded-2xl bg-white text-slate-800">
+      <div className="flex items-center justify-between">
+        <label className="font-bold text-[10px] text-slate-600 uppercase tracking-wider">Materials / PDFs</label>
+        <label className="text-[10px] font-black text-brandSky cursor-pointer hover:underline flex items-center gap-1">
+          <Upload className="w-3.5 h-3.5" />
+          <span>{uploading ? 'UPLOADING...' : 'UPLOAD'}</span>
+          <input type="file" accept=".pdf,.zip,.rar,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.txt" onChange={handleFileChange} disabled={uploading} className="hidden" />
+        </label>
+      </div>
+
+      {attachments.length === 0 ? (
+        <p className="text-[10px] text-slate-400 italic">No attachments.</p>
+      ) : (
+        <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+          {attachments.map((att, idx) => (
+            <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="font-bold truncate text-slate-700" title={att.name}>{att.name}</span>
+                <span className="text-slate-400 shrink-0">({formatSize(att.size)})</span>
+              </div>
+              <button type="button" onClick={() => onDelete(idx)} className="text-red-500 hover:text-red-700 p-0.5 shrink-0 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('stats');
   const [stats, setStats] = useState(null);
@@ -179,12 +250,14 @@ export default function AdminDashboard() {
   const [lessons, setLessons] = useState([]);
   const [moduleTitle, setModuleTitle] = useState('');
   const [moduleDescription, setModuleDescription] = useState('');
+  const [moduleAttachments, setModuleAttachments] = useState([]);
   const [lessonTitle, setLessonTitle] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
   const [lessonContent, setLessonContent] = useState('');
   const [lessonVideoUrl, setLessonVideoUrl] = useState('');
   const [lessonVideoFile, setLessonVideoFile] = useState(null);
   const [lessonVideoDuration, setLessonVideoDuration] = useState('');
+  const [lessonAttachments, setLessonAttachments] = useState([]);
 
   // LMS upload + edit state
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
@@ -197,8 +270,14 @@ export default function AdminDashboard() {
   const [editLessonVideoFile, setEditLessonVideoFile] = useState(null);
   const [editLessonVideoDuration, setEditLessonVideoDuration] = useState('');
   const [editLessonPublished, setEditLessonPublished] = useState(false);
+  const [editLessonAttachments, setEditLessonAttachments] = useState([]);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState('');
   const [lessonIsPublished, setLessonIsPublished] = useState(true);
+
+  const [editingModule, setEditingModule] = useState(null);
+  const [editModuleTitle, setEditModuleTitle] = useState('');
+  const [editModuleDescription, setEditModuleDescription] = useState('');
+  const [editModuleAttachments, setEditModuleAttachments] = useState([]);
 
   // Job Posting Form States
   const [jobTitle, setJobTitle] = useState('');
@@ -1133,6 +1212,67 @@ export default function AdminDashboard() {
     fetchModules(course._id);
   };
 
+  const handleUploadMaterial = async (file, onUploaded) => {
+    try {
+      const formData = new FormData();
+      formData.append('materialFile', file);
+      
+      const res = await fetch('/api/admin/upload-material', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        onUploaded(data.data);
+      } else {
+        alert(data.message || 'File upload failed');
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      alert('File upload failed — server error');
+    }
+  };
+
+  const handleEditModule = (module) => {
+    setEditingModule(module);
+    setEditModuleTitle(module.title);
+    setEditModuleDescription(module.description || '');
+    setEditModuleAttachments(module.attachments || []);
+  };
+
+  const handleUpdateModule = async (e) => {
+    e.preventDefault();
+    if (!editingModule) return;
+    try {
+      const res = await fetch(`/api/admin/modules/${editingModule._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          title: editModuleTitle,
+          description: editModuleDescription,
+          attachments: editModuleAttachments
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Module updated!');
+        setEditingModule(null);
+        fetchModules(selectedCourse._id);
+      } else {
+        alert(data.message || 'Failed to update module');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Server error updating module');
+    }
+  };
+
   const handleCreateModule = async (e) => {
     e.preventDefault();
     if (!moduleTitle.trim() || !selectedCourse) return;
@@ -1145,7 +1285,8 @@ export default function AdminDashboard() {
         },
         body: JSON.stringify({
           title: moduleTitle,
-          description: moduleDescription
+          description: moduleDescription,
+          attachments: moduleAttachments
         })
       });
       const data = await res.json();
@@ -1153,6 +1294,7 @@ export default function AdminDashboard() {
         alert('Module created!');
         setModuleTitle('');
         setModuleDescription('');
+        setModuleAttachments([]);
         fetchModules(selectedCourse._id);
       }
     } catch (err) {
@@ -1215,6 +1357,7 @@ export default function AdminDashboard() {
     formData.append('videoUrl', lessonVideoUrl);
     formData.append('videoDuration', lessonVideoDuration);
     formData.append('isPublished', String(lessonIsPublished));
+    formData.append('attachments', JSON.stringify(lessonAttachments));
     if (lessonVideoFile) formData.append('videoFile', lessonVideoFile);
 
     // Use XHR so we can track upload progress for large video files
@@ -1244,6 +1387,7 @@ export default function AdminDashboard() {
           setLessonVideoFile(null);
           setLessonVideoDuration('');
           setLessonIsPublished(true);
+          setLessonAttachments([]);
           setVideoPreviewUrl('');
           const fileInput = document.getElementById('lesson-video-input');
           if (fileInput) fileInput.value = '';
@@ -1274,6 +1418,7 @@ export default function AdminDashboard() {
     setEditLessonVideoFile(null);
     setEditLessonVideoDuration(lesson.videoDuration ? String(lesson.videoDuration) : '');
     setEditLessonPublished(lesson.isPublished ?? true);
+    setEditLessonAttachments(lesson.attachments || []);
   };
 
   const handleUpdateLesson = async (e) => {
@@ -1287,6 +1432,7 @@ export default function AdminDashboard() {
     formData.append('videoUrl', editLessonVideoUrl);
     formData.append('videoDuration', editLessonVideoDuration);
     formData.append('isPublished', String(editLessonPublished));
+    formData.append('attachments', JSON.stringify(editLessonAttachments));
     if (editLessonVideoFile) formData.append('videoFile', editLessonVideoFile);
 
     setVideoUploading(true);
@@ -3961,6 +4107,11 @@ export default function AdminDashboard() {
                               className="w-full p-2.5 bg-white border rounded-xl outline-none resize-none"
                               rows={2}
                             />
+                            <AttachmentManager
+                              attachments={moduleAttachments}
+                              onAdd={fileObj => setModuleAttachments(prev => [...prev, fileObj])}
+                              onDelete={idx => setModuleAttachments(prev => prev.filter((_, i) => i !== idx))}
+                            />
                             <button type="submit" className="w-full bg-brandSky text-white font-bold py-2 rounded-xl">
                               ADD MODULE
                             </button>
@@ -3989,6 +4140,13 @@ export default function AdminDashboard() {
                                     {module.isPublished ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                   </button>
                                   <button
+                                    onClick={(e) => { e.stopPropagation(); handleEditModule(module); }}
+                                    title="Edit Module"
+                                    className="p-1 text-blue-500 hover:bg-blue-50 rounded-lg"
+                                  >
+                                    <Edit className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleDeleteModule(module._id);
@@ -4009,6 +4167,41 @@ export default function AdminDashboard() {
                       <div className="space-y-4">
                         {selectedModule ? (
                           <>
+                            {/* Edit Module Modal */}
+                            {editingModule && (
+                              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                                  <div className="flex items-center justify-between p-5 border-b text-slate-800">
+                                    <h4 className="font-bold font-quicksand">Edit Module</h4>
+                                    <button onClick={() => setEditingModule(null)} className="p-1 hover:bg-slate-100 rounded-lg">
+                                      <X className="w-5 h-5" />
+                                    </button>
+                                  </div>
+                                  <form onSubmit={handleUpdateModule} className="p-5 space-y-4 text-xs text-slate-800">
+                                    <div className="space-y-1">
+                                      <label className="font-bold text-slate-600">Module Title</label>
+                                      <input type="text" required value={editModuleTitle} onChange={e => setEditModuleTitle(e.target.value)} className="w-full p-2.5 bg-white border rounded-xl outline-none" />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="font-bold text-slate-600">Description</label>
+                                      <textarea value={editModuleDescription} onChange={e => setEditModuleDescription(e.target.value)} className="w-full p-2.5 bg-white border rounded-xl outline-none resize-none" rows={3} />
+                                    </div>
+                                    <AttachmentManager
+                                      attachments={editModuleAttachments}
+                                      onAdd={fileObj => setEditModuleAttachments(prev => [...prev, fileObj])}
+                                      onDelete={idx => setEditModuleAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                    />
+                                    <div className="flex gap-2 pt-2">
+                                      <button type="submit" className="flex-1 bg-brandSky text-white font-bold py-2.5 rounded-xl">
+                                        Save Changes
+                                      </button>
+                                      <button type="button" onClick={() => setEditingModule(null)} className="px-4 py-2.5 border border-slate-200 rounded-xl text-slate-600 font-bold">Cancel</button>
+                                    </div>
+                                  </form>
+                                </div>
+                              </div>
+                            )}
+
                             {/* Edit Lesson Modal */}
                             {editingLesson && (
                               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -4048,6 +4241,11 @@ export default function AdminDashboard() {
                                       <input type="checkbox" checked={editLessonPublished} onChange={e => setEditLessonPublished(e.target.checked)} className="w-4 h-4 accent-green-500" />
                                       <span className="font-bold text-slate-600">Published (visible to students)</span>
                                     </label>
+                                    <AttachmentManager
+                                      attachments={editLessonAttachments}
+                                      onAdd={fileObj => setEditLessonAttachments(prev => [...prev, fileObj])}
+                                      onDelete={idx => setEditLessonAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                    />
                                     {videoUploading && (
                                       <div className="space-y-1">
                                         <div className="flex items-center justify-between text-[10px] text-slate-500">
@@ -4140,6 +4338,11 @@ export default function AdminDashboard() {
                                   <input type="checkbox" checked={lessonIsPublished} onChange={e => setLessonIsPublished(e.target.checked)} className="w-4 h-4 accent-green-500" />
                                   <span className="font-bold text-slate-600">Publish immediately (visible to enrolled students)</span>
                                 </label>
+                                <AttachmentManager
+                                  attachments={lessonAttachments}
+                                  onAdd={fileObj => setLessonAttachments(prev => [...prev, fileObj])}
+                                  onDelete={idx => setLessonAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                />
                                 {videoUploading && (
                                   <div className="space-y-1">
                                     <div className="flex items-center justify-between text-[10px] text-slate-500">

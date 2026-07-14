@@ -102,11 +102,17 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
     let parentProfile;
     if (!parentUser) {
       const salt = bcrypt.genSaltSync(10);
+      
+      // Determine if this is an online course or school class
+      const allCourses = await mockStore.find('courses') || [];
+      const isCourseStudent = allCourses.some(c => String(c.title).toLowerCase() === String(normalizedStudent.class).toLowerCase());
+      const resolvedRole = isCourseStudent ? 'user' : 'parent';
+
       parentUser = await mockStore.create('users', {
         name: normalizedParent.fatherName || normalizedParent.motherName,
         email: normalizedParent.email,
         password: bcrypt.hashSync(password || 'parent123', salt),
-        role: 'parent'
+        role: resolvedRole
       });
       parentProfile = await mockStore.create('parents', {
         userId: parentUser._id,
@@ -191,6 +197,15 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
 
     if (course) {
       totalAmount = Number(course.price) || 0;
+      
+      // Auto-enroll the user in mock mode
+      await mockStore.create('enrollments', {
+        user: String(parentUser._id),
+        course: String(course._id),
+        paymentStatus: 'paid',
+        status: 'active',
+        enrolledAt: new Date()
+      });
     }
 
     const durationMonths = 3; // exactly 3 installments monthly
@@ -220,11 +235,15 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
   let parentUser = await User.findOne({ email: normalizedParent.email });
   let parent;
   if (!parentUser) {
+    // Check if class matches an online course in database
+    const isCourseStudent = await Course.findOne({ title: { $regex: new RegExp(`^${normalizedStudent.class}$`, 'i') } });
+    const resolvedRole = isCourseStudent ? 'user' : 'parent';
+
     parentUser = await User.create({
       name: normalizedParent.fatherName || normalizedParent.motherName,
       email: normalizedParent.email,
       password: password || 'parent123',
-      role: 'parent'
+      role: resolvedRole
     });
     parent = await Parent.create({
       userId: parentUser._id,
@@ -302,6 +321,16 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
 
   if (course) {
     totalAmount = Number(course.price) || 0;
+
+    // Auto-enroll the user in MongoDB mode
+    const CourseEnrollment = (await import('../models/CourseEnrollment.js')).default;
+    await CourseEnrollment.findOneAndUpdate(
+      { user: parentUser._id, course: course._id },
+      { paymentStatus: 'paid', status: 'active', enrolledAt: new Date() },
+      { upsert: true, new: true }
+    );
+    course.totalEnrollments = (course.totalEnrollments || 0) + 1;
+    await course.save();
   }
 
   const durationMonths = 3; // exactly 3 installments monthly
