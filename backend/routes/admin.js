@@ -1703,7 +1703,8 @@ router.post('/courses/:courseId/modules', async (req, res) => {
       course: req.params.courseId,
       title,
       description: description || '',
-      order: order ? Number(order) : 0
+      order: order ? Number(order) : 0,
+      isPublished: true
     };
     if (mockStore.isMock) {
       const module = await mockStore.create('modules', { ...payload, createdAt: new Date() });

@@ -92,6 +92,15 @@ app.listen(PORT, async () => {
   try {
     await connectDB();
     await seedDatabase();
+
+    // Auto-publish existing modules and lessons in the database to fix student visibility
+    const Module = (await import('./models/Module.js')).default;
+    const Lesson = (await import('./models/Lesson.js')).default;
+    const modulesUpdated = await Module.updateMany({ isPublished: { $ne: true } }, { $set: { isPublished: true } });
+    const lessonsUpdated = await Lesson.updateMany({ isPublished: { $ne: true } }, { $set: { isPublished: true } });
+    if (modulesUpdated.modifiedCount > 0 || lessonsUpdated.modifiedCount > 0) {
+      console.log(`Auto-published ${modulesUpdated.modifiedCount} modules and ${lessonsUpdated.modifiedCount} lessons to fix visibility.`);
+    }
   } catch (err) {
     console.error('Error during database initialization:', err);
   }

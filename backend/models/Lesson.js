@@ -47,7 +47,7 @@ const LessonSchema = new mongoose.Schema({
   },
   isPublished: {
     type: Boolean,
-    default: false
+    default: true
   },
   isFree: {
     type: Boolean,
