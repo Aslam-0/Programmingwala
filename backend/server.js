@@ -15,6 +15,7 @@ import meetingsRoutes from './routes/meetings.js';
 import admissionPaymentRoutes from './routes/admissionPayment.js';
 import razorpayRoutes from './routes/razorpay.js';
 import lmsRoutes from './routes/lms.js';
+import paymentRoutes from './routes/payment.js';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/meetings', meetingsRoutes);
 app.use('/api/admission-payment', admissionPaymentRoutes);
 app.use('/api/razorpay', razorpayRoutes);
 app.use('/api/lms', lmsRoutes);
+app.use('/api', paymentRoutes);
 
 // Serve Frontend static assets if built, otherwise serve API welcome message
 const frontendDistPath = path.join(__dirname, '../frontend/dist');

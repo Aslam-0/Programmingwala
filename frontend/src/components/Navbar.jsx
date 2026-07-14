@@ -30,7 +30,8 @@ export default function Navbar() {
     { name: 'PRACTICE', path: '/practice' },
     { name: 'MEETINGS', path: '/meetings' },
     { name: 'GALLERY', path: '/gallery' },
-    { name: 'CONTACT', path: '/contact' }
+    { name: 'CONTACT', path: '/contact' },
+    { name: 'PAYMENT TEST', path: '/payment-demo' }
   ];
 
   const getDashboardPath = () => {
