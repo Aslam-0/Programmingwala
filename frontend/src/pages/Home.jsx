@@ -355,6 +355,91 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* ═══════ SECTION 5b: Tech Gallery ═══════ */}
+      <motion.section {...fadeIn} className="px-4 pb-10 md:px-8">
+        <div className="mx-auto max-w-7xl">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brandCoral dark:text-cyan-300 mb-4 text-center sm:text-left">
+            Inside the Classroom
+          </p>
+
+          {/* Top row — 2 wide + 1 tall mosaic */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+            {/* Java — wide card spanning 2 cols on lg */}
+            <div className="lg:col-span-2 relative rounded-2xl sm:rounded-3xl overflow-hidden h-52 sm:h-64 group">
+              <img
+                src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80"
+                alt="Java programming on laptop"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/30 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm sm:text-base font-quicksand drop-shadow">Java Development</span>
+              <span className="absolute top-3 right-3 text-[10px] font-bold bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full uppercase tracking-wider">Backend</span>
+            </div>
+
+            {/* C++ */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-52 sm:h-64 group">
+              <img
+                src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?auto=format&fit=crop&w=500&q=80"
+                alt="C++ competitive programming"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm font-quicksand drop-shadow">C++ Programming</span>
+              <span className="absolute top-3 right-3 text-[10px] font-bold bg-cyan-400/30 backdrop-blur-sm text-cyan-100 px-2.5 py-1 rounded-full uppercase tracking-wider">DSA</span>
+            </div>
+
+            {/* MERN Stack */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-52 sm:h-64 group">
+              <img
+                src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=500&q=80"
+                alt="MERN full stack development"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm font-quicksand drop-shadow">MERN Stack</span>
+              <span className="absolute top-3 right-3 text-[10px] font-bold bg-indigo-400/30 backdrop-blur-sm text-indigo-100 px-2.5 py-1 rounded-full uppercase tracking-wider">Full Stack</span>
+            </div>
+
+            {/* Frontend / React */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-48 sm:h-56 group">
+              <img
+                src="https://images.unsplash.com/photo-1593720213428-28a5b9e94613?auto=format&fit=crop&w=500&q=80"
+                alt="React frontend development"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm font-quicksand drop-shadow">Frontend / React</span>
+              <span className="absolute top-3 right-3 text-[10px] font-bold bg-pink-400/30 backdrop-blur-sm text-pink-100 px-2.5 py-1 rounded-full uppercase tracking-wider">UI / UX</span>
+            </div>
+
+            {/* Code review / mentor session */}
+            <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden h-48 sm:h-56 group">
+              <img
+                src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80"
+                alt="Code on monitor during class"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/20 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm font-quicksand drop-shadow">Live Coding Lab</span>
+            </div>
+
+            {/* Team collaboration — wide */}
+            <div className="lg:col-span-2 relative rounded-2xl sm:rounded-3xl overflow-hidden h-48 sm:h-56 group">
+              <img
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=800&q=80"
+                alt="Students collaborating on tech project"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-900/20 to-transparent" />
+              <span className="absolute bottom-4 left-4 text-white font-bold text-sm font-quicksand drop-shadow">Project Collaboration</span>
+              <span className="absolute top-3 right-3 text-[10px] font-bold bg-green-400/30 backdrop-blur-sm text-green-100 px-2.5 py-1 rounded-full uppercase tracking-wider">Placement Prep</span>
+            </div>
+
+          </div>
+        </div>
+      </motion.section>
+
       {/* ═══════ SECTION 6: Why Appletree ═══════ */}
       <motion.section {...fadeIn} className="px-4 py-12 sm:py-16 border-y border-orange-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 md:px-8">
         <div className="mx-auto max-w-7xl">

@@ -65,6 +65,11 @@ const AdmissionPaymentSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  paymentPlan: {
+    type: String,
+    enum: ['installments', 'full'],
+    default: 'installments'
+  },
   createdAt: {
     type: Date,
     default: Date.now

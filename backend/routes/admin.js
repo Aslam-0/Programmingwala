@@ -484,7 +484,7 @@ router.post('/admissions/create', uploadAdmissions.fields([
   { name: 'motherAadhaarCard', maxCount: 1 },
   { name: 'addressProof', maxCount: 1 }
 ]), async (req, res) => {
-  let { studentDetails, parentDetails, password, admissionFee, addressProofType } = req.body;
+  let { studentDetails, parentDetails, password, admissionFee, addressProofType, paymentPlan = 'installments' } = req.body;
   
   try {
     if (typeof studentDetails === 'string') studentDetails = JSON.parse(studentDetails);
@@ -628,19 +628,32 @@ router.post('/admissions/create', uploadAdmissions.fields([
         });
       }
 
-      for (let i = 1; i <= 12; i++) {
-        const dueDate = new Date();
-        dueDate.setMonth(dueDate.getMonth() + (i - 1));
+      if (paymentPlan === 'full') {
         await mockStore.create('fees', {
           studentId: newStudent._id,
-          amount: 150,
-          term: `Month ${i} Tuition Fee`,
-          dueDate,
-          status: i === 1 ? 'paid' : 'pending',
-          paymentDate: i === 1 ? new Date() : null,
-          transactionId: i === 1 ? `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}` : '',
-          paymentMethod: i === 1 ? 'Admission Desk Cash' : ''
+          amount: 1800,
+          term: 'Full Year Tuition Fee',
+          dueDate: new Date(),
+          status: 'paid',
+          paymentDate: new Date(),
+          transactionId: `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}`,
+          paymentMethod: 'Admission Desk Cash'
         });
+      } else {
+        for (let i = 1; i <= 12; i++) {
+          const dueDate = new Date();
+          dueDate.setMonth(dueDate.getMonth() + (i - 1));
+          await mockStore.create('fees', {
+            studentId: newStudent._id,
+            amount: 150,
+            term: `Month ${i} Tuition Fee`,
+            dueDate,
+            status: i === 1 ? 'paid' : 'pending',
+            paymentDate: i === 1 ? new Date() : null,
+            transactionId: i === 1 ? `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}` : '',
+            paymentMethod: i === 1 ? 'Admission Desk Cash' : ''
+          });
+        }
       }
 
       return res.status(201).json({ 
@@ -729,19 +742,32 @@ router.post('/admissions/create', uploadAdmissions.fields([
       });
     }
 
-    for (let i = 1; i <= 12; i++) {
-      const dueDate = new Date();
-      dueDate.setMonth(dueDate.getMonth() + (i - 1));
+    if (paymentPlan === 'full') {
       await Fee.create({
         studentId: student._id,
-        amount: 150,
-        term: `Month ${i} Tuition Fee`,
-        dueDate,
-        status: i === 1 ? 'paid' : 'pending',
-        paymentDate: i === 1 ? new Date() : null,
-        transactionId: i === 1 ? `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}` : '',
-        paymentMethod: i === 1 ? 'Admission Desk Cash' : ''
+        amount: 1800,
+        term: 'Full Year Tuition Fee',
+        dueDate: new Date(),
+        status: 'paid',
+        paymentDate: new Date(),
+        transactionId: `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}`,
+        paymentMethod: 'Admission Desk Cash'
       });
+    } else {
+      for (let i = 1; i <= 12; i++) {
+        const dueDate = new Date();
+        dueDate.setMonth(dueDate.getMonth() + (i - 1));
+        await Fee.create({
+          studentId: student._id,
+          amount: 150,
+          term: `Month ${i} Tuition Fee`,
+          dueDate,
+          status: i === 1 ? 'paid' : 'pending',
+          paymentDate: i === 1 ? new Date() : null,
+          transactionId: i === 1 ? `TXN-INIT-${Math.floor(100000 + Math.random() * 900000)}` : '',
+          paymentMethod: i === 1 ? 'Admission Desk Cash' : ''
+        });
+      }
     }
 
     res.status(201).json({ 

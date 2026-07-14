@@ -395,6 +395,95 @@ router.post('/create-fee-order', async (req, res) => {
 });
 
 /**
+ * Verify a Razorpay payment signature for a student fee invoice payment.
+ * Body: { razorpayOrderId, razorpayPaymentId, razorpaySignature, feeId, studentId }
+ */
+router.post('/verify-fee', async (req, res) => {
+  try {
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, feeId, studentId } = req.body;
+
+    if (!feeId) {
+      return res.status(400).json({ success: false, message: 'feeId is required.' });
+    }
+
+    if (RAZORPAY_ENABLED) {
+      if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+        return res.status(400).json({ success: false, message: 'Missing Razorpay payment fields.' });
+      }
+
+      // Verify signature
+      const expected = crypto
+        .createHmac('sha256', RAZORPAY_KEY_SECRET)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+
+      const expectedBuffer = Buffer.from(expected);
+      const receivedBuffer = Buffer.from(String(razorpaySignature));
+      const signatureMatches = expectedBuffer.length === receivedBuffer.length
+        && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+
+      if (!signatureMatches) {
+        return res.status(400).json({ success: false, message: 'Payment signature verification failed.' });
+      }
+    }
+
+    // Update fee status to paid
+    const finalTxnId = razorpayPaymentId || `TXN-FEE-${Date.now()}`;
+    const method = RAZORPAY_ENABLED ? 'Razorpay' : 'Offline/Mock';
+
+    if (mockStore.isMock) {
+      const feesList = mockStore['fees'] || [];
+      const fee = feesList.find(f => String(f._id) === String(feeId));
+      if (fee && fee.status !== 'paid') {
+        fee.status = 'paid';
+        fee.paymentDate = new Date();
+        fee.transactionId = finalTxnId;
+        fee.paymentMethod = method;
+
+        await mockStore.create('receipts', {
+          feeId: fee._id,
+          studentId: fee.studentId,
+          receiptNumber: `REC-INST-${Date.now()}`,
+          amountPaid: fee.amount,
+          paymentMethod: method,
+          paymentDate: new Date(),
+          transactionId: finalTxnId
+        });
+        console.log(`Mock: Paid fee invoice ${feeId}`);
+      }
+    } else {
+      const fee = await Fee.findById(feeId);
+      if (fee && fee.status !== 'paid') {
+        fee.status = 'paid';
+        fee.paymentDate = new Date();
+        fee.transactionId = finalTxnId;
+        fee.paymentMethod = method;
+        await fee.save();
+
+        await Receipt.create({
+          feeId: fee._id,
+          studentId: fee.studentId,
+          receiptNumber: `REC-INST-${Date.now()}`,
+          amountPaid: fee.amount,
+          paymentMethod: method,
+          paymentDate: new Date(),
+          transactionId: finalTxnId
+        });
+        console.log(`MongoDB: Paid fee invoice ${feeId}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Fee payment verified successfully.'
+    });
+  } catch (error) {
+    console.error('Razorpay verify-fee error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
  * Create a Razorpay order for a new student admission application payment.
  * Body: { admissionPaymentId, amount }
  */

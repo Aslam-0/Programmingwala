@@ -121,6 +121,7 @@ export default function AdminDashboard() {
   const [admAddressProofType, setAdmAddressProofType] = useState('Aadhaar Card');
   const [admAddressProof, setAdmAddressProof] = useState(null);
   const [admissionFee, setAdmissionFee] = useState('');
+  const [admPaymentPlan, setAdmPaymentPlan] = useState('installments');
 
   // Admission payment modal (Cash / UPI → auto-saves student on verified payment)
   const [admissionPaymentOpen, setAdmissionPaymentOpen] = useState(false);
@@ -1637,6 +1638,7 @@ export default function AdminDashboard() {
           formData.append('parentDetails', JSON.stringify(parentDetails));
           formData.append('password', admParentPassword);
           formData.append('admissionFee', admissionFee || '0');
+          formData.append('paymentPlan', admPaymentPlan);
           formData.append('addressProofType', admAddressProofType);
 
           if (admBirthCertificate) {
@@ -1711,6 +1713,7 @@ export default function AdminDashboard() {
             setAdmAddressProofType('Aadhaar Card');
             setAdmAddressProof(null);
             setAdmissionFee('');
+            setAdmPaymentPlan('installments');
 
             const certInput = document.getElementById('adm-cert-input');
             const photoInput = document.getElementById('adm-photo-input');
@@ -5521,10 +5524,15 @@ export default function AdminDashboard() {
           onSuccess={handleAdmissionPaymentSuccess}
         />
       )}
-      {/* Collect Invoice Payment Modal (Cash / UPI) */}
+      {/* Collect Invoice Payment Modal (Cash / UPI / Full Balance) */}
       {collectPaymentOpen && selectedCollectFee && (
         <CollectPaymentModal
           fee={selectedCollectFee}
+          allFees={fees.filter(f => {
+            const info = getStudentInfo(selectedCollectFee);
+            const fInfo = getStudentInfo(f);
+            return fInfo.id === info.id && f.status !== 'paid';
+          })}
           studentName={getStudentInfo(selectedCollectFee).name}
           onClose={() => { setCollectPaymentOpen(false); setSelectedCollectFee(null); }}
           onSuccess={handleCollectPaymentSuccess}

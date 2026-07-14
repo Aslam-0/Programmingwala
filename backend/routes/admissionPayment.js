@@ -48,7 +48,7 @@ router.post('/create', uploadAdmissions.single('photo'), async (req, res) => {
   };
   const studentDetails = parseObj(req.body.studentDetails);
   const parentDetails = parseObj(req.body.parentDetails);
-  const { amount, method, txnRef } = req.body;
+  const { amount, method, txnRef, paymentPlan = 'installments' } = req.body;
   const photoFile = req.file || null;
 
   // Reconstruct a multer-like object from a stored pendingPhoto (not used at create,
@@ -68,7 +68,6 @@ router.post('/create', uploadAdmissions.single('photo'), async (req, res) => {
   let amountNum = Number(amount) || 0;
 
 
-
   // Cash is collected at the desk → instantly verified.
   const baseStatus = method === 'cash' ? 'verified' : 'pending';
 
@@ -81,7 +80,8 @@ router.post('/create', uploadAdmissions.single('photo'), async (req, res) => {
     upiId: method === 'upi' ? UPI_PAYEE_VPA : '',
     txnRef: txnRef || '',
     status: baseStatus,
-    verifiedAt: method === 'cash' ? new Date() : null
+    verifiedAt: method === 'cash' ? new Date() : null,
+    paymentPlan
   };
   // For UPI, stash the uploaded photo so it survives until verification.
   if (method === 'upi' && photoFile) {
@@ -115,7 +115,8 @@ router.post('/create', uploadAdmissions.single('photo'), async (req, res) => {
           parentDetails,
           paymentMethod: 'Cash',
           admissionFee: amountNum,
-          photo: photoForService
+          photo: photoForService,
+          paymentPlan: payload.paymentPlan
         });
         const update = {
           status: 'verified',
@@ -195,7 +196,8 @@ router.post('/verify/:id', async (req, res) => {
       parentDetails: payment.parentDetails,
       paymentMethod: 'UPI',
       admissionFee: payment.amount,
-      photo: photoForService
+      photo: photoForService,
+      paymentPlan: payment.paymentPlan || 'installments'
     });
 
     const update = {

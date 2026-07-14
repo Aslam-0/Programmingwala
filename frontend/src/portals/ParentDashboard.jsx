@@ -1,9 +1,192 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Smile, Award, Clock, HelpCircle, CreditCard, Clipboard, CheckCircle, FileText, Download, BookOpen } from 'lucide-react';
+import { Smile, Award, Clock, CreditCard, Clipboard, CheckCircle, FileText, Download, BookOpen, Layers, Split, QrCode, Loader, Banknote, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ConfirmModal from '../components/ConfirmModal.jsx';
 import ResultCardModal from '../components/ResultCardModal.jsx';
+
+// ── Inline fee payment modal for parent (Razorpay + Full/Installment) ──
+function FeePayModal({ fee, allFees = [], studentName, onClose, onSuccess }) {
+  const [payMode, setPayMode] = useState('single'); // 'single' | 'full'
+  const [stage, setStage] = useState('choose');     // choose | processing | success | error
+  const [errorMsg, setErrorMsg] = useState('');
+  const [rzpKey, setRzpKey] = useState(null);
+  const pollRef = useRef(null);
+  const token = localStorage.getItem('token');
+
+  const pendingFees = allFees.filter(f => f.status !== 'paid');
+  const singleAmount = fee.amount || 0;
+  const fullBalance  = pendingFees.reduce((sum, f) => sum + (f.amount || 0), 0) || singleAmount;
+  const activeAmount = payMode === 'full' ? fullBalance : singleAmount;
+
+  useEffect(() => {
+    fetch('/api/razorpay/config').then(r => r.json()).then(d => { if (d.success) setRzpKey(d.keyId); }).catch(() => {});
+    if (!document.getElementById('rzp-script')) {
+      const s = document.createElement('script');
+      s.id = 'rzp-script';
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      document.body.appendChild(s);
+    }
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  const markFeePaid = async (feeId, paymentMethod, paymentId = '') => {
+    await fetch(`/api/portal/parent/child/pay-fee/${feeId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ paymentMethod, paymentId })
+    });
+  };
+
+  const handleRazorpay = async () => {
+    setStage('processing');
+    try {
+      // Create order
+      const orderRes = await fetch('/api/razorpay/create-fee-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ feeId: fee._id, studentId: fee.studentId?._id || fee.studentId, amount: activeAmount })
+      });
+      const orderData = await orderRes.json();
+
+      // Mock mode — no live keys
+      if (!orderData.success || !orderData.order || orderData.mode === 'mock') {
+        // Dev simulation
+        if (payMode === 'full') {
+          for (const f of pendingFees) await markFeePaid(f._id, 'Razorpay (Simulated Full)');
+        } else {
+          await markFeePaid(fee._id, 'Razorpay (Simulated)');
+        }
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        setStage('success');
+        setTimeout(() => onSuccess?.(), 1200);
+        return;
+      }
+
+      // Live Razorpay
+      if (!window.Razorpay) { setStage('error'); setErrorMsg('Payment gateway not loaded. Try again.'); return; }
+      setStage('choose'); // Go back while modal is open
+
+      const options = {
+        key: rzpKey || orderData.keyId,
+        amount: orderData.order.amount,
+        currency: 'INR',
+        name: 'Pranidha International School',
+        description: payMode === 'full' ? `Full Fee Balance — ${studentName}` : fee.term,
+        order_id: orderData.order.id,
+        prefill: { name: studentName },
+        theme: { color: '#FF7043' },
+        handler: async (response) => {
+          setStage('processing');
+          try {
+            // Verify + mark paid
+            await fetch('/api/razorpay/verify-fee', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                feeId: fee._id,
+                studentId: fee.studentId?._id || fee.studentId
+              })
+            });
+            if (payMode === 'full' && pendingFees.length > 1) {
+              for (const f of pendingFees.filter(f => f._id !== fee._id)) {
+                await markFeePaid(f._id, `Razorpay Full (${response.razorpay_payment_id})`);
+              }
+            }
+          } catch (e) { console.error(e); }
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          setStage('success');
+          setTimeout(() => onSuccess?.(), 1200);
+        },
+        modal: { ondismiss: () => setStage('choose') }
+      };
+      new window.Razorpay(options).open();
+    } catch (err) {
+      console.error(err);
+      setStage('error');
+      setErrorMsg(err.message || 'Payment failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+      <div className="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="text-center border-b border-slate-100 pb-4 mb-4">
+          <div className="w-12 h-12 rounded-full bg-brandCoral/10 text-brandCoral flex items-center justify-center mx-auto mb-2">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <h4 className="font-quicksand font-bold text-slate-800 text-base">{studentName}</h4>
+          <p className="text-[10px] text-slate-500 mt-0.5">{fee.term}</p>
+          <p className="text-3xl font-extrabold text-brandCoral font-quicksand mt-2">
+            ₹{activeAmount.toLocaleString('en-IN')}
+          </p>
+        </div>
+
+        {stage === 'choose' && (
+          <div className="space-y-3">
+            {/* Pay mode */}
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Choose Payment Amount</p>
+            <div className="grid grid-cols-2 gap-2 mb-1">
+              <button onClick={() => setPayMode('single')}
+                className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 text-xs transition-all ${payMode === 'single' ? 'border-brandCoral bg-brandCoral/5' : 'border-slate-100 hover:border-slate-200'}`}>
+                <Split className="w-5 h-5 text-brandCoral" />
+                <span className="font-bold text-slate-800">This Installment</span>
+                <span className="text-[10px] text-slate-500">₹{singleAmount.toLocaleString('en-IN')}</span>
+              </button>
+              <button onClick={() => setPayMode('full')}
+                className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 text-xs transition-all ${payMode === 'full' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-100 hover:border-slate-200'}`}>
+                <Layers className="w-5 h-5 text-indigo-500" />
+                <span className="font-bold text-slate-800">Pay Full Balance</span>
+                <span className="text-[10px] text-indigo-600 font-bold">₹{fullBalance.toLocaleString('en-IN')}</span>
+                {pendingFees.length > 0 && <span className="text-[9px] text-slate-400">Clears {pendingFees.length} dues</span>}
+              </button>
+            </div>
+
+            <button onClick={handleRazorpay}
+              className="w-full py-3 rounded-2xl bg-brandCoral hover:bg-brandCoral-dark text-white font-quicksand font-bold text-sm flex items-center justify-center gap-2 shadow transition-all">
+              <CreditCard className="w-4 h-4" />
+              Pay ₹{activeAmount.toLocaleString('en-IN')} Online
+            </button>
+            <p className="text-center text-[10px] text-slate-400">Powered by Razorpay · UPI, Cards, NetBanking</p>
+          </div>
+        )}
+
+        {stage === 'processing' && (
+          <div className="py-8 text-center">
+            <Loader className="w-8 h-8 mx-auto animate-spin text-brandCoral" />
+            <p className="mt-3 text-xs font-semibold text-slate-500">Processing payment…</p>
+          </div>
+        )}
+
+        {stage === 'success' && (
+          <div className="py-8 text-center space-y-2">
+            <div className="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+            <p className="font-quicksand font-bold text-slate-800">Payment Successful!</p>
+            <p className="text-xs text-slate-500">
+              {payMode === 'full' ? 'Full balance cleared.' : 'Installment paid.'}
+            </p>
+          </div>
+        )}
+
+        {stage === 'error' && (
+          <div className="py-6 text-center space-y-3">
+            <p className="text-xs text-red-500">{errorMsg}</p>
+            <button onClick={() => setStage('choose')} className="px-5 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">TRY AGAIN</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ParentDashboard() {
   const { user, profile } = useAuth();
@@ -15,6 +198,7 @@ export default function ParentDashboard() {
   const [libraryNotes, setLibraryNotes] = useState([]);
   const [payingFeeId, setPayingFeeId] = useState(null);
   const [activeResultCard, setActiveResultCard] = useState(null);
+  const [feePayModal, setFeePayModal] = useState(null); // { fee } | null
 
   useEffect(() => {
     // Parent profile children fetch
@@ -95,39 +279,14 @@ export default function ParentDashboard() {
   };
 
   const handlePayFee = (feeId) => {
-    triggerConfirm(
-      "Are you sure you want to submit?",
-      "This will process the tuition fee payment from your portal wallet.",
-      "submit",
-      async () => {
-        setPayingFeeId(feeId);
-        try {
-          const res = await fetch(`/api/portal/parent/child/${child._id}/pay-fee/${feeId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ paymentMethod: 'Parent Portal Wallet' })
-          });
-          const data = await res.json();
-          setPayingFeeId(null);
-          if (data.success) {
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 }
-            });
-            fetchFees(child._id);
-          } else {
-            alert('Simulated payment failed.');
-          }
-        } catch (err) {
-          console.error(err);
-          setPayingFeeId(null);
-        }
-      }
-    );
+    const feeObj = fees.find(f => f._id === feeId);
+    if (!feeObj) return;
+    setFeePayModal({ fee: feeObj });
+  };
+
+  const handleFeePaySuccess = () => {
+    setFeePayModal(null);
+    if (child) fetchFees(child._id);
   };
 
   const [activeReceipt, setActiveReceipt] = useState(null);
@@ -501,10 +660,10 @@ export default function ParentDashboard() {
                           {fee.status !== 'paid' && (
                             <button
                               onClick={() => handlePayFee(fee._id)}
-                              disabled={payingFeeId === fee._id}
-                              className="font-quicksand font-bold text-xs bg-brandCoral hover:bg-brandCoral-dark text-white px-5 py-2.5 rounded-full shadow transition-all shrink-0 cursor-pointer"
+                              className="font-quicksand font-bold text-xs bg-brandCoral hover:bg-brandCoral-dark text-white px-5 py-2.5 rounded-full shadow transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
                             >
-                              {payingFeeId === fee._id ? 'Processing...' : 'PAY TUITION ONLINE'}
+                              <CreditCard className="w-3.5 h-3.5" />
+                              PAY ONLINE
                             </button>
                           )}
                         </div>
@@ -590,6 +749,17 @@ export default function ParentDashboard() {
         <ResultCardModal
           activeResult={activeResultCard}
           onClose={() => setActiveResultCard(null)}
+        />
+      )}
+
+      {/* Fee Payment Modal — Razorpay with Full/Installment choice */}
+      {feePayModal && (
+        <FeePayModal
+          fee={feePayModal.fee}
+          allFees={fees.filter(f => f.status !== 'paid')}
+          studentName={child?.name || ''}
+          onClose={() => setFeePayModal(null)}
+          onSuccess={handleFeePaySuccess}
         />
       )}
 

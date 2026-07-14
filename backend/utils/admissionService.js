@@ -62,7 +62,7 @@ function normalizeClass(value) {
  * @param {Object} [args.photo]        optional multer file ({ buffer, mimetype, originalname }) for the student photo
  * @returns {Promise<{applicationNumber, studentId, studentDbId, receipt}>}
  */
-export async function createAdmissionFromPayment({ studentDetails, parentDetails, paymentMethod = 'Cash', admissionFee = 0, password, photo }) {
+export async function createAdmissionFromPayment({ studentDetails, parentDetails, paymentMethod = 'Cash', admissionFee = 0, password, photo, paymentPlan = 'installments' }) {
   const isMock = mockStore.isMock;
   const appNo = genAppNo();
   const studentPublicId = genStudentId();
@@ -208,24 +208,37 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
       });
     }
 
-    const durationMonths = 3; // exactly 3 installments monthly
-    const installmentAmount = Math.round(totalAmount / 3);
-    const lastInstallmentAmount = totalAmount - (installmentAmount * 2);
-
-    for (let i = 1; i <= 3; i++) {
-      const dueDate = new Date();
-      dueDate.setMonth(dueDate.getMonth() + (i - 1));
-      const amt = i === durationMonths ? lastInstallmentAmount : installmentAmount;
+    if (paymentPlan === 'full') {
       await mockStore.create('fees', {
         studentId: newStudent._id,
-        amount: amt,
-        term: `Month ${i} Installment`,
-        dueDate,
-        status: i === 1 ? 'paid' : 'pending',
-        paymentDate: i === 1 ? new Date() : null,
-        transactionId: i === 1 ? genTxn('TXN-INIT') : '',
-        paymentMethod: i === 1 ? paymentMethod : ''
+        amount: totalAmount,
+        term: 'Full Course Tuition Fee',
+        dueDate: new Date(),
+        status: 'paid',
+        paymentDate: new Date(),
+        transactionId: genTxn('TXN-INIT'),
+        paymentMethod
       });
+    } else {
+      const durationMonths = 3; // exactly 3 installments monthly
+      const installmentAmount = Math.round(totalAmount / 3);
+      const lastInstallmentAmount = totalAmount - (installmentAmount * 2);
+
+      for (let i = 1; i <= 3; i++) {
+        const dueDate = new Date();
+        dueDate.setMonth(dueDate.getMonth() + (i - 1));
+        const amt = i === durationMonths ? lastInstallmentAmount : installmentAmount;
+        await mockStore.create('fees', {
+          studentId: newStudent._id,
+          amount: amt,
+          term: `Month ${i} Installment`,
+          dueDate,
+          status: i === 1 ? 'paid' : 'pending',
+          paymentDate: i === 1 ? new Date() : null,
+          transactionId: i === 1 ? genTxn('TXN-INIT') : '',
+          paymentMethod: i === 1 ? paymentMethod : ''
+        });
+      }
     }
 
     return { applicationNumber: appNo, studentId: studentPublicId, studentDbId, receipt };
@@ -333,24 +346,37 @@ export async function createAdmissionFromPayment({ studentDetails, parentDetails
     await course.save();
   }
 
-  const durationMonths = 3; // exactly 3 installments monthly
-  const installmentAmount = Math.round(totalAmount / 3);
-  const lastInstallmentAmount = totalAmount - (installmentAmount * 2);
-
-  for (let i = 1; i <= 3; i++) {
-    const dueDate = new Date();
-    dueDate.setMonth(dueDate.getMonth() + (i - 1));
-    const amt = i === durationMonths ? lastInstallmentAmount : installmentAmount;
+  if (paymentPlan === 'full') {
     await Fee.create({
       studentId: student._id,
-      amount: amt,
-      term: `Month ${i} Installment`,
-      dueDate,
-      status: i === 1 ? 'paid' : 'pending',
-      paymentDate: i === 1 ? new Date() : null,
-      transactionId: i === 1 ? genTxn('TXN-INIT') : '',
-      paymentMethod: i === 1 ? paymentMethod : ''
+      amount: totalAmount,
+      term: 'Full Course Tuition Fee',
+      dueDate: new Date(),
+      status: 'paid',
+      paymentDate: new Date(),
+      transactionId: genTxn('TXN-INIT'),
+      paymentMethod
     });
+  } else {
+    const durationMonths = 3; // exactly 3 installments monthly
+    const installmentAmount = Math.round(totalAmount / 3);
+    const lastInstallmentAmount = totalAmount - (installmentAmount * 2);
+
+    for (let i = 1; i <= 3; i++) {
+      const dueDate = new Date();
+      dueDate.setMonth(dueDate.getMonth() + (i - 1));
+      const amt = i === durationMonths ? lastInstallmentAmount : installmentAmount;
+      await Fee.create({
+        studentId: student._id,
+        amount: amt,
+        term: `Month ${i} Installment`,
+        dueDate,
+        status: i === 1 ? 'paid' : 'pending',
+        paymentDate: i === 1 ? new Date() : null,
+        transactionId: i === 1 ? genTxn('TXN-INIT') : '',
+        paymentMethod: i === 1 ? paymentMethod : ''
+      });
+    }
   }
 
   return { applicationNumber: appNo, studentId: studentPublicId, studentDbId: String(student._id), receipt };
