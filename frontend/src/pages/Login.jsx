@@ -1,123 +1,74 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
-import { User, Lock, Eye, EyeOff, Mail, ArrowRight, Code2, GraduationCap } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, Mail, ArrowRight, Code2, Home } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
-/* ─────────────────────────────────────────────
-   Animated Hanging Lamp SVG
-   Pull string toggles light/dark mode.
-   Shows a glow halo when light-mode is active.
-───────────────────────────────────────────── */
+/* ── Hanging Lamp SVG with pull-string theme toggle ── */
 function HangingLamp({ isDark, onToggle }) {
+  const [swing, setSwing] = useState(0);
   const [pulled, setPulled] = useState(false);
-  const [swing, setSwing] = useState(0); // string swing angle
 
-  const handlePull = () => {
+  const pull = () => {
     setPulled(true);
-    setSwing(18);
+    setSwing(16);
     onToggle();
-    setTimeout(() => { setSwing(-10); }, 180);
-    setTimeout(() => { setSwing(5);  }, 320);
-    setTimeout(() => { setSwing(-3); }, 450);
-    setTimeout(() => { setSwing(0); setPulled(false); }, 580);
+    setTimeout(() => setSwing(-9),  200);
+    setTimeout(() => setSwing(4),   370);
+    setTimeout(() => setSwing(-2),  500);
+    setTimeout(() => { setSwing(0); setPulled(false); }, 620);
   };
 
-  const lampColor = isDark ? '#374151' : '#fef3c7';
-  const capColor  = isDark ? '#1f2937' : '#d97706';
-  const bulbColor = isDark ? '#6b7280' : '#fde68a';
-  const glowColor = isDark ? 'transparent' : 'rgba(253,230,138,0.55)';
-  const wireColor = isDark ? '#6b7280' : '#d97706';
-  const stringColor = isDark ? '#9ca3af' : '#92400e';
+  const wire   = isDark ? '#78716c' : '#d97706';
+  const cap    = isDark ? '#292524' : '#b45309';
+  const shade  = isDark ? '#44403c' : '#fef3c7';
+  const bulb   = isDark ? '#57534e' : '#fde68a';
+  const str    = isDark ? '#a8a29e' : '#92400e';
+  const glow   = isDark ? 'none'    : 'drop-shadow(0 0 10px #fbbf24)';
 
   return (
-    <div
-      className="flex flex-col items-center cursor-pointer select-none"
-      onClick={handlePull}
-      title={isDark ? 'Click to turn on light' : 'Click to turn off light'}
-    >
-      {/* Wire from ceiling */}
-      <motion.div
-        animate={{ rotate: swing }}
-        transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-        style={{ transformOrigin: 'top center' }}
-        className="flex flex-col items-center"
-      >
-        {/* Ceiling wire */}
-        <svg width="4" height="36" viewBox="0 0 4 36">
-          <line x1="2" y1="0" x2="2" y2="36" stroke={wireColor} strokeWidth="2" strokeLinecap="round" />
-        </svg>
-
-        {/* Lamp body */}
-        <svg width="72" height="60" viewBox="0 0 72 60">
-          {/* Glow halo (light mode only) */}
-          {!isDark && (
-            <ellipse cx="36" cy="52" rx="30" ry="12"
-              fill={glowColor}
-              filter="url(#blur)" />
-          )}
-          <defs>
-            <filter id="blur"><feGaussianBlur stdDeviation="4" /></filter>
-          </defs>
-
-          {/* Lamp shade */}
-          <polygon points="10,48 28,12 44,12 62,48"
-            fill={lampColor}
-            stroke={capColor}
-            strokeWidth="1.5"
-            strokeLinejoin="round" />
-
-          {/* Shade highlight */}
-          <polygon points="22,44 30,16 38,16 50,44"
-            fill="rgba(255,255,255,0.08)" />
-
-          {/* Cap on top */}
-          <rect x="24" y="8" width="24" height="8" rx="3"
-            fill={capColor} />
-
-          {/* Bulb */}
-          <ellipse cx="36" cy="50" rx="7" ry="8"
-            fill={bulbColor}
-            style={{ filter: isDark ? 'none' : 'drop-shadow(0 0 8px #fde68a)' }} />
-
-          {/* Bulb shine */}
-          {!isDark && (
-            <ellipse cx="33" cy="46" rx="2.5" ry="3"
-              fill="rgba(255,255,255,0.55)" />
-          )}
+    <div className="flex flex-col items-center cursor-pointer select-none group" onClick={pull}
+         title={isDark ? 'Turn on light' : 'Turn off light'}>
+      <motion.div animate={{ rotate: swing }} transition={{ type:'spring', stiffness:280, damping:14 }}
+                  style={{ transformOrigin:'top center' }} className="flex flex-col items-center">
+        {/* Wire */}
+        <svg width="3" height="32"><line x1="1.5" y1="0" x2="1.5" y2="32" stroke={wire} strokeWidth="2" strokeLinecap="round"/></svg>
+        {/* Lamp */}
+        <svg width="68" height="56" viewBox="0 0 68 56">
+          {!isDark && <ellipse cx="34" cy="50" rx="28" ry="10" fill="rgba(251,191,36,0.4)" filter="url(#gblur)"/>}
+          <defs><filter id="gblur"><feGaussianBlur stdDeviation="4"/></filter></defs>
+          <rect x="22" y="6" width="24" height="7" rx="3" fill={cap}/>
+          <polygon points="8,46 24,10 44,10 60,46" fill={shade} stroke={cap} strokeWidth="1.5" strokeLinejoin="round"/>
+          <polygon points="20,42 28,14 40,14 50,42" fill="rgba(255,255,255,0.1)"/>
+          <ellipse cx="34" cy="48" rx="6.5" ry="7" fill={bulb} style={{ filter: glow }}/>
+          {!isDark && <ellipse cx="31" cy="44" rx="2.5" ry="3" fill="rgba(255,255,255,0.6)"/>}
         </svg>
       </motion.div>
-
-      {/* Pull string */}
-      <motion.div
-        animate={{ scaleY: pulled ? 0.85 : 1, y: pulled ? -4 : 0 }}
-        transition={{ duration: 0.15 }}
-        className="flex flex-col items-center"
-      >
-        <svg width="2" height="28" viewBox="0 0 2 28">
-          <line x1="1" y1="0" x2="1" y2="22"
-            stroke={stringColor} strokeWidth="1.5" strokeDasharray="3 2" strokeLinecap="round" />
-        </svg>
-        {/* Ring pull */}
-        <svg width="14" height="14" viewBox="0 0 14 14">
-          <circle cx="7" cy="7" r="5"
-            fill="none" stroke={stringColor} strokeWidth="2" />
-        </svg>
+      {/* String */}
+      <motion.div animate={{ scaleY: pulled ? 0.82 : 1, y: pulled ? -3 : 0 }} transition={{ duration:0.14 }}
+                  className="flex flex-col items-center">
+        <svg width="2" height="26"><line x1="1" y1="0" x2="1" y2="20" stroke={str} strokeWidth="1.5" strokeDasharray="3 2"/></svg>
+        <svg width="13" height="13"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke={str} strokeWidth="2"/></svg>
       </motion.div>
-
-      <p className="mt-1 text-[9px] font-bold uppercase tracking-widest opacity-50"
-         style={{ color: isDark ? '#9ca3af' : '#92400e' }}>
-        {isDark ? 'Pull for light' : 'Pull for dark'}
-      </p>
+      <span className="text-[9px] font-bold uppercase tracking-widest mt-0.5 opacity-60 group-hover:opacity-90 transition-opacity"
+            style={{ color: str }}>
+        {isDark ? 'Light on' : 'Light off'}
+      </span>
     </div>
   );
 }
 
-/* ─────────────────────────────────────────────
-   Main Login / Register Page
-───────────────────────────────────────────── */
+/* ── Course tech badge — visible in both light and dark ── */
+const TECH_BADGES = [
+  { label: 'Java',  bg: '#fff7ed', text: '#ea580c', border: '#fed7aa' },
+  { label: 'C++',   bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' },
+  { label: 'MERN',  bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' },
+  { label: 'React', bg: '#f0f9ff', text: '#0284c7', border: '#bae6fd' },
+];
+
+/* ── Main component ── */
 export default function Login() {
   const { login, register, user, error, loading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -125,345 +76,304 @@ export default function Login() {
   const [searchParams] = useSearchParams();
 
   const [isRegister, setIsRegister] = useState(searchParams.get('register') === 'true');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showCredentials, setShowCredentials] = useState(false);
+  const [name, setName]             = useState('');
+  const [email, setEmail]           = useState('');
+  const [password, setPassword]     = useState('');
+  const [confirm, setConfirm]       = useState('');
+  const [valErr, setValErr]         = useState('');
+  const [showPw, setShowPw]         = useState(false);
+  const [showDemo, setShowDemo]     = useState(false);
 
   useEffect(() => {
-    if (user) {
-      if (user.role === 'admin') navigate('/dashboard/admin');
-      else if (user.role === 'teacher') navigate('/dashboard/teacher');
-      else if (user.role === 'parent') navigate('/dashboard/parent');
-      else navigate('/lms/dashboard');
-    }
+    if (!user) return;
+    if (user.role === 'admin')   navigate('/dashboard/admin');
+    else if (user.role === 'teacher') navigate('/dashboard/teacher');
+    else if (user.role === 'parent')  navigate('/dashboard/parent');
+    else navigate('/lms/dashboard');
   }, [user, navigate]);
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setValidationError('');
+  const handleLogin = async (e) => {
+    e.preventDefault(); setValErr('');
     const res = await login(email, password);
     if (res.success) {
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-      if (res.user.role === 'admin') navigate('/dashboard/admin');
+      if (res.user.role === 'admin')        navigate('/dashboard/admin');
       else if (res.user.role === 'teacher') navigate('/dashboard/teacher');
-      else if (res.user.role === 'parent') navigate('/dashboard/parent');
+      else if (res.user.role === 'parent')  navigate('/dashboard/parent');
       else navigate('/lms/dashboard');
-    } else {
-      setValidationError(res.message || 'Login failed. Please check your credentials.');
-    }
+    } else setValErr(res.message || 'Login failed. Check your credentials.');
   };
 
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setValidationError('');
-    if (!name.trim())   { setValidationError('Please enter your full name'); return; }
-    if (!email.trim())  { setValidationError('Please enter your email'); return; }
-    if (password.length < 6) { setValidationError('Password must be at least 6 characters'); return; }
-    if (password !== confirmPassword) { setValidationError('Passwords do not match'); return; }
+  const handleRegister = async (e) => {
+    e.preventDefault(); setValErr('');
+    if (!name.trim())          { setValErr('Enter your full name'); return; }
+    if (password.length < 6)   { setValErr('Password must be ≥ 6 chars'); return; }
+    if (password !== confirm)  { setValErr('Passwords do not match'); return; }
     const res = await register(name, email, password, 'user');
     if (res.success) {
       confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
       navigate('/lms/dashboard');
-    } else {
-      setValidationError(res.message || 'Registration failed. Email might already be in use.');
-    }
+    } else setValErr(res.message || 'Registration failed.');
   };
 
-  /* ── Theme-aware colors ── */
-  const bg        = isDark ? '#0f172a' : '#faf5ff';
-  const panelBg   = isDark ? 'rgba(15,23,42,0.96)' : '#ffffff';
-  const panelBdr  = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
-  const labelClr  = isDark ? '#94a3b8' : '#64748b';
-  const inputBg   = isDark ? 'rgba(2,6,23,0.5)' : '#f8fafc';
-  const inputClr  = isDark ? '#f1f5f9' : '#0f172a';
-  const inputBdr  = isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0';
-  const textClr   = isDark ? '#f1f5f9' : '#0f172a';
-  const mutedClr  = isDark ? '#64748b' : '#94a3b8';
+  /* ── Colors ── */
+  const pageBg   = isDark ? '#0f172a'              : '#f1f5f9';
+  const cardBg   = isDark ? 'rgba(15,23,42,0.97)'  : '#ffffff';
+  const cardBdr  = isDark ? 'rgba(255,255,255,0.07)': 'rgba(0,0,0,0.08)';
+  const labelClr = isDark ? '#94a3b8'              : '#475569';
+  const inputBg  = isDark ? 'rgba(2,6,23,0.55)'   : '#f8fafc';
+  const inputClr = isDark ? '#f1f5f9'              : '#0f172a';
+  const inputBdr = isDark ? 'rgba(255,255,255,0.1)': '#e2e8f0';
+  const textClr  = isDark ? '#f1f5f9'              : '#0f172a';
+  const mutedClr = isDark ? '#64748b'              : '#94a3b8';
+  const accentA  = '#FF7043';
+  const accentB  = '#f43f5e';
 
-  /* Accent: coral gradient matching the design */
-  const accentA = '#FF7043';
-  const accentB = '#f43f5e';
-
-  const inputBase = {
-    backgroundColor: inputBg,
-    color: inputClr,
-    borderColor: inputBdr,
-    border: '1.5px solid',
-    caretColor: accentA,
-    transition: 'border-color 0.2s',
+  const inp = {
+    backgroundColor: inputBg, color: inputClr,
+    border: `1.5px solid ${inputBdr}`, caretColor: accentA, transition: 'border-color .2s',
   };
 
   return (
-    <div
-      className="min-h-screen w-full flex items-center justify-center py-8 px-4 transition-colors duration-500 font-quicksand"
-      style={{ background: bg }}
-    >
-      {/* ── Main card ── */}
-      <div
-        className="w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative"
-        style={{ border: `1px solid ${panelBdr}`, background: panelBg }}
-      >
+    <div className="min-h-screen w-full flex items-center justify-center py-8 px-4 transition-colors duration-500 font-quicksand relative"
+         style={{ background: pageBg }}>
 
-        {/* ══════ LEFT PANEL — decorative ══════ */}
-        <div
-          className="relative hidden md:flex flex-col items-center justify-between py-10 px-8 md:w-2/5 overflow-hidden"
-          style={{ background: `linear-gradient(145deg, ${accentA}, ${accentB})` }}
-        >
-          {/* Geometric shapes */}
+      {/* ── Home button ── */}
+      <Link to="/"
+        className="absolute top-5 left-5 flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs shadow-md transition-all hover:scale-105 active:scale-95 z-20"
+        style={{ background: `linear-gradient(135deg,${accentA},${accentB})`, color:'#fff', boxShadow:`0 4px 14px rgba(255,112,67,0.4)` }}>
+        <Home className="w-3.5 h-3.5"/> Back to Home
+      </Link>
+
+      {/* ── Card ── */}
+      <div className="w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row"
+           style={{ border:`1px solid ${cardBdr}`, background: cardBg }}>
+
+        {/* ════ LEFT PANEL ════ */}
+        <div className="relative hidden md:flex flex-col items-center justify-between py-10 px-8 md:w-[42%] overflow-hidden"
+             style={{ background:`linear-gradient(150deg,${accentA} 0%,${accentB} 100%)` }}>
+
+          {/* Geometric decorations */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full opacity-20"
-                 style={{ background: 'rgba(255,255,255,0.3)' }} />
-            <div className="absolute -bottom-20 -right-10 w-72 h-72 rounded-full opacity-15"
-                 style={{ background: 'rgba(255,255,255,0.3)' }} />
-            {/* Diagonal slashes like in the design */}
-            <div className="absolute top-0 left-0 w-full h-full">
-              <svg viewBox="0 0 200 400" className="w-full h-full opacity-20">
-                <polygon points="-40,400 120,0 160,0 20,400" fill="white" />
-                <polygon points="60,400 220,0 260,0 100,400" fill="white" />
-              </svg>
-            </div>
+            <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full" style={{ background:'rgba(255,255,255,0.15)' }}/>
+            <div className="absolute -bottom-24 -right-12 w-80 h-80 rounded-full" style={{ background:'rgba(255,255,255,0.10)' }}/>
+            <svg viewBox="0 0 200 450" className="absolute inset-0 w-full h-full opacity-15">
+              <polygon points="-40,450 130,0 170,0 30,450" fill="white"/>
+              <polygon points="50,450 220,0 260,0 90,450" fill="white"/>
+            </svg>
           </div>
 
-          {/* Top: App logo */}
-          <Link to="/" className="relative z-10 flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-              <Code2 className="w-5 h-5 text-white" />
+          {/* Logo */}
+          <Link to="/" className="relative z-10 flex items-center gap-2.5 group">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background:'rgba(255,255,255,0.25)' }}>
+              <Code2 className="w-5 h-5 text-white"/>
             </div>
-            <span className="text-white font-black text-lg tracking-wider">APPLETREE</span>
+            <span className="text-white font-black text-lg tracking-widest">APPLETREE</span>
           </Link>
 
-          {/* Center: Tab switcher */}
-          <div className="relative z-10 flex flex-col items-center gap-4">
-            {/* Active tab pill */}
-            <div className="flex rounded-2xl overflow-hidden border-2 border-white/30">
-              <button
-                onClick={() => { setIsRegister(false); setValidationError(''); }}
-                className={`px-6 py-2.5 text-sm font-black tracking-wider transition-all ${
-                  !isRegister ? 'bg-white text-gray-800' : 'bg-transparent text-white'
-                }`}
-              >
-                LOGIN
-              </button>
-              <button
-                onClick={() => { setIsRegister(true); setValidationError(''); }}
-                className={`px-6 py-2.5 text-sm font-black tracking-wider transition-all ${
-                  isRegister ? 'bg-white text-gray-800' : 'bg-transparent text-white'
-                }`}
-              >
-                SIGN UP
-              </button>
+          {/* Tab switcher */}
+          <div className="relative z-10 flex flex-col items-center gap-5 w-full">
+            <div className="flex rounded-2xl overflow-hidden p-1" style={{ background:'rgba(255,255,255,0.2)' }}>
+              {['LOGIN','SIGN UP'].map((t,i) => (
+                <button key={t} onClick={() => { setIsRegister(i===1); setValErr(''); }}
+                  className="px-6 py-2.5 text-sm font-black tracking-wider rounded-xl transition-all"
+                  style={(!isRegister && i===0)||(isRegister && i===1)
+                    ? { background:'#fff', color:'#111827', boxShadow:'0 2px 8px rgba(0,0,0,0.15)' }
+                    : { background:'transparent', color:'rgba(255,255,255,0.85)' }}>
+                  {t}
+                </button>
+              ))}
             </div>
 
-            <p className="text-white/70 text-xs font-semibold text-center max-w-[180px] leading-relaxed">
-              {isRegister
-                ? 'Join thousands of students learning Java, C++ & MERN'
-                : 'Welcome back to your learning dashboard'}
+            <p className="text-white/75 text-xs font-semibold text-center max-w-[190px] leading-relaxed">
+              {isRegister ? 'Join thousands of students learning to code' : 'Welcome back to your learning dashboard'}
             </p>
 
-            {/* Mini course badges */}
-            <div className="flex flex-wrap gap-2 justify-center mt-2">
-              {['Java', 'C++', 'MERN', 'React'].map(c => (
-                <span key={c} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/20 text-white">
-                  {c}
+            {/* Tech badges — colored so visible on ANY background */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {TECH_BADGES.map(({ label }) => (
+                <span key={label}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-full border"
+                  style={{ background:'rgba(255,255,255,0.92)', color:'#1e293b', border:'1.5px solid rgba(255,255,255,0.6)' }}>
+                  {label}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Bottom: Stats */}
-          <div className="relative z-10 grid grid-cols-2 gap-3 w-full">
+          {/* Stats */}
+          <div className="relative z-10 grid grid-cols-2 gap-2.5 w-full">
             {[['500+','Students'],['95%','Placement'],['4.9★','Rating'],['50+','Projects']].map(([v,l]) => (
-              <div key={l} className="bg-white/15 rounded-2xl p-3 text-center">
-                <p className="text-white font-black text-base">{v}</p>
-                <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider">{l}</p>
+              <div key={l} className="rounded-2xl p-3 text-center" style={{ background:'rgba(255,255,255,0.18)' }}>
+                <p className="text-white font-black text-base leading-none">{v}</p>
+                <p className="text-white/70 text-[10px] font-semibold uppercase tracking-wider mt-0.5">{l}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ══════ RIGHT PANEL — form ══════ */}
-        <div className="flex-1 flex flex-col relative py-8 px-6 md:px-10">
+        {/* ════ RIGHT PANEL ════ */}
+        <div className="flex-1 flex flex-col relative py-8 px-6 md:px-10 overflow-hidden"
+             style={{ background: cardBg }}>
 
-          {/* Lamp toggle — top right */}
-          <div className="absolute top-0 right-6 z-20">
-            <HangingLamp isDark={isDark} onToggle={toggleTheme} />
+          {/* Lamp — top right */}
+          <div className="absolute top-0 right-5 z-20">
+            <HangingLamp isDark={isDark} onToggle={toggleTheme}/>
           </div>
 
-          {/* Mobile logo */}
-          <div className="flex md:hidden items-center gap-2 mb-6">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-                 style={{ background: `linear-gradient(135deg, ${accentA}, ${accentB})` }}>
-              <Code2 className="w-4 h-4 text-white" />
+          {/* Mobile logo + home */}
+          <div className="flex md:hidden items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                   style={{ background:`linear-gradient(135deg,${accentA},${accentB})` }}>
+                <Code2 className="w-4 h-4 text-white"/>
+              </div>
+              <span className="font-black text-base tracking-wider" style={{ color: accentA }}>APPLETREE</span>
             </div>
-            <span className="font-black text-base tracking-wider" style={{ color: accentA }}>APPLETREE</span>
+            <Link to="/" className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full"
+                  style={{ background:`linear-gradient(135deg,${accentA},${accentB})`, color:'#fff' }}>
+              <Home className="w-3 h-3"/> Home
+            </Link>
           </div>
 
           {/* Header */}
-          <div className="mb-7 pr-14">
+          <div className="mb-6 pr-14">
             <AnimatePresence mode="wait">
-              <motion.div key={isRegister ? 'reg' : 'log'}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.22 }}>
+              <motion.div key={isRegister?'r':'l'}
+                initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                exit={{ opacity:0, y:-8 }} transition={{ duration:0.22 }}>
                 <h2 className="text-2xl md:text-3xl font-black" style={{ color: textClr }}>
                   {isRegister ? 'Create Account' : 'Welcome Back!'}
                 </h2>
                 <p className="mt-1 text-xs font-semibold" style={{ color: mutedClr }}>
-                  {isRegister
-                    ? 'Sign up to start your learning journey'
-                    : 'Log in to access your courses & dashboard'}
+                  {isRegister ? 'Sign up to start your coding journey' : 'Log in to access your courses & dashboard'}
                 </p>
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Error */}
-          {(validationError || error) && (
-            <div className="mb-5 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2"
-                 style={{ backgroundColor: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', color: '#fb7185' }}>
-              <span>⚠️</span>
-              <span>{validationError || error}</span>
+          {(valErr || error) && (
+            <div className="mb-4 p-3.5 rounded-2xl text-xs font-bold flex items-start gap-2"
+                 style={{ background:'rgba(244,63,94,0.1)', border:'1px solid rgba(244,63,94,0.25)', color:'#fb7185' }}>
+              <span>⚠️</span><span>{valErr || error}</span>
             </div>
           )}
 
-          {/* ── FORM ── */}
+          {/* Form */}
           <AnimatePresence mode="wait">
-            <motion.div key={isRegister ? 'regform' : 'logform'}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.25 }}>
+            <motion.form key={isRegister?'rf':'lf'}
+              initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }}
+              exit={{ opacity:0, x:-20 }} transition={{ duration:0.25 }}
+              onSubmit={isRegister ? handleRegister : handleLogin}
+              className="space-y-4 text-xs font-bold">
 
-              <form onSubmit={isRegister ? handleRegisterSubmit : handleLoginSubmit}
-                    className="space-y-4 text-xs font-bold">
-
-                {isRegister && (
-                  <div>
-                    <label className="block mb-1.5 uppercase tracking-wider" style={{ color: labelClr }}>Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: mutedClr }} />
-                      <input type="text" required value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder="Your full name"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm font-semibold"
-                        style={inputBase}
-                        onFocus={e => e.target.style.borderColor = accentA}
-                        onBlur={e => e.target.style.borderColor = inputBdr}
-                      />
-                    </div>
-                  </div>
-                )}
-
+              {isRegister && (
                 <div>
-                  <label className="block mb-1.5 uppercase tracking-wider" style={{ color: labelClr }}>Email</label>
+                  <label className="block mb-1.5 uppercase tracking-wider" style={{ color:labelClr }}>Full Name</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: mutedClr }} />
-                    <input type="email" required value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      placeholder="you@example.com"
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color:mutedClr }}/>
+                    <input type="text" required value={name} onChange={e=>setName(e.target.value)}
+                      placeholder="Your full name"
                       className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm font-semibold"
-                      style={inputBase}
-                      onFocus={e => e.target.style.borderColor = accentA}
-                      onBlur={e => e.target.style.borderColor = inputBdr}
-                    />
+                      style={inp}
+                      onFocus={e=>e.target.style.borderColor=accentA}
+                      onBlur={e=>e.target.style.borderColor=inputBdr}/>
                   </div>
                 </div>
+              )}
 
+              <div>
+                <label className="block mb-1.5 uppercase tracking-wider" style={{ color:labelClr }}>Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color:mutedClr }}/>
+                  <input type="email" required value={email} onChange={e=>setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm font-semibold"
+                    style={inp}
+                    onFocus={e=>e.target.style.borderColor=accentA}
+                    onBlur={e=>e.target.style.borderColor=inputBdr}/>
+                </div>
+              </div>
+
+              <div>
+                <label className="block mb-1.5 uppercase tracking-wider" style={{ color:labelClr }}>Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color:mutedClr }}/>
+                  <input type={showPw?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)}
+                    placeholder={isRegister?'At least 6 characters':'••••••••'}
+                    className="w-full pl-10 pr-10 py-3 rounded-xl outline-none text-sm font-semibold"
+                    style={inp}
+                    onFocus={e=>e.target.style.borderColor=accentA}
+                    onBlur={e=>e.target.style.borderColor=inputBdr}/>
+                  <button type="button" onClick={()=>setShowPw(!showPw)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2" style={{ color:mutedClr }}>
+                    {showPw ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                  </button>
+                </div>
+              </div>
+
+              {isRegister && (
                 <div>
-                  <label className="block mb-1.5 uppercase tracking-wider" style={{ color: labelClr }}>Password</label>
+                  <label className="block mb-1.5 uppercase tracking-wider" style={{ color:labelClr }}>Confirm Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: mutedClr }} />
-                    <input type={showPassword ? 'text' : 'password'} required value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      placeholder={isRegister ? 'At least 6 characters' : '••••••••'}
-                      className="w-full pl-10 pr-10 py-3 rounded-xl outline-none text-sm font-semibold"
-                      style={inputBase}
-                      onFocus={e => e.target.style.borderColor = accentA}
-                      onBlur={e => e.target.style.borderColor = inputBdr}
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2"
-                      style={{ color: mutedClr }}>
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color:mutedClr }}/>
+                    <input type={showPw?'text':'password'} required value={confirm} onChange={e=>setConfirm(e.target.value)}
+                      placeholder="Repeat password"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm font-semibold"
+                      style={inp}
+                      onFocus={e=>e.target.style.borderColor=accentA}
+                      onBlur={e=>e.target.style.borderColor=inputBdr}/>
                   </div>
                 </div>
+              )}
 
-                {isRegister && (
-                  <div>
-                    <label className="block mb-1.5 uppercase tracking-wider" style={{ color: labelClr }}>Confirm Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: mutedClr }} />
-                      <input type={showPassword ? 'text' : 'password'} required value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="Repeat password"
-                        className="w-full pl-10 pr-4 py-3 rounded-xl outline-none text-sm font-semibold"
-                        style={inputBase}
-                        onFocus={e => e.target.style.borderColor = accentA}
-                        onBlur={e => e.target.style.borderColor = inputBdr}
-                      />
-                    </div>
-                  </div>
-                )}
+              {!isRegister && (
+                <div className="flex items-center justify-between pt-1">
+                  <label className="flex items-center gap-1.5 cursor-pointer" style={{ color:mutedClr }}>
+                    <input type="checkbox" className="accent-orange-500 w-3.5 h-3.5"/> Remember me
+                  </label>
+                  <button type="button" className="hover:underline font-bold" style={{ color:accentA }}>
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
 
-                {/* Forgot password row (login only) */}
-                {!isRegister && (
-                  <div className="flex items-center justify-between pt-1">
-                    <span style={{ color: mutedClr }}>Remember me</span>
-                    <button type="button" className="hover:underline" style={{ color: accentA }}>
-                      Forgot Password?
-                    </button>
-                  </div>
-                )}
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 font-extrabold tracking-wider rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 text-white mt-2"
-                  style={{ background: `linear-gradient(135deg, ${accentA}, ${accentB})`,
-                           boxShadow: `0 8px 24px rgba(255,112,67,0.35)` }}
-                >
-                  {loading ? (
-                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>{isRegister ? 'CREATING...' : 'LOGGING IN...'}</span></>
-                  ) : (
-                    <><span>{isRegister ? 'CREATE ACCOUNT' : 'LOGIN'}</span>
-                      <ArrowRight className="w-4 h-4" /></>
-                  )}
-                </button>
-              </form>
-            </motion.div>
+              {/* Submit button */}
+              <button type="submit" disabled={loading}
+                className="w-full py-3.5 font-extrabold tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 text-white mt-1"
+                style={{ background:`linear-gradient(135deg,${accentA},${accentB})`,
+                         boxShadow:`0 8px 24px rgba(255,112,67,0.4)`,
+                         opacity: loading ? 0.75 : 1 }}>
+                {loading
+                  ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                      <span>{isRegister?'CREATING...':'LOGGING IN...'}</span></>
+                  : <><span>{isRegister?'CREATE ACCOUNT':'LOGIN'}</span><ArrowRight className="w-4 h-4"/></>
+                }
+              </button>
+            </motion.form>
           </AnimatePresence>
 
-          {/* Demo accounts (login only) */}
+          {/* Demo accounts */}
           {!isRegister && (
-            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${inputBdr}` }}>
-              <button type="button"
-                onClick={() => setShowCredentials(!showCredentials)}
+            <div className="mt-5 pt-4" style={{ borderTop:`1px solid ${inputBdr}` }}>
+              <button type="button" onClick={()=>setShowDemo(!showDemo)}
                 className="w-full flex items-center justify-between text-[10px] font-black tracking-widest uppercase hover:underline"
-                style={{ color: accentA }}>
-                <span>Demo Accounts</span>
-                <span>{showCredentials ? '▲' : '▼'}</span>
+                style={{ color:accentA }}>
+                <span>Demo Accounts</span><span>{showDemo?'▲':'▼'}</span>
               </button>
-              {showCredentials && (
-                <div className="mt-2.5 grid grid-cols-3 gap-2">
-                  {[
-                    ['🏢','Admin','admin@pranidha.edu','admin123'],
+              {showDemo && (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {[['🏢','Admin','admin@pranidha.edu','admin123'],
                     ['👩‍🏫','Teacher','teacher@pranidha.edu','teacher123'],
-                    ['🧸','Parent','parent@pranidha.edu','parent123'],
+                    ['🧸','Parent','parent@pranidha.edu','parent123']
                   ].map(([icon,label,em,pw]) => (
                     <button key={label} type="button"
-                      onClick={() => { setEmail(em); setPassword(pw); }}
-                      className="p-2 rounded-xl text-center text-[10px] font-bold transition-all hover:scale-105"
-                      style={{ background: inputBg, border: `1.5px solid ${inputBdr}`, color: textClr }}>
-                      <span className="block text-base mb-0.5">{icon}</span>
-                      {label}
+                      onClick={()=>{ setEmail(em); setPassword(pw); }}
+                      className="p-2.5 rounded-xl text-center font-bold transition-all hover:scale-105 active:scale-95"
+                      style={{ background:inputBg, border:`1.5px solid ${inputBdr}`, color:textClr }}>
+                      <span className="block text-xl mb-0.5">{icon}</span>
+                      <span className="text-[10px]">{label}</span>
                     </button>
                   ))}
                 </div>
@@ -472,18 +382,26 @@ export default function Login() {
           )}
 
           {/* Switch login/register */}
-          <p className="mt-6 text-center text-xs font-semibold" style={{ color: mutedClr }}>
+          <p className="mt-5 text-center text-xs font-semibold" style={{ color:mutedClr }}>
             {isRegister ? 'Already have an account? ' : 'New to Appletree? '}
-            <button
-              onClick={() => { setIsRegister(!isRegister); setValidationError(''); }}
-              className="font-black hover:underline"
-              style={{ color: accentA }}>
+            <button onClick={()=>{ setIsRegister(!isRegister); setValErr(''); }}
+              className="font-black hover:underline" style={{ color:accentA }}>
               {isRegister ? 'Log In' : 'Sign Up Free'}
             </button>
           </p>
 
-        </div>
-      </div>
+          {/* Mobile — tech badges */}
+          <div className="flex md:hidden flex-wrap gap-2 justify-center mt-5">
+            {TECH_BADGES.map(({ label, bg, text, border }) => (
+              <span key={label} className="text-[11px] font-bold px-3 py-1.5 rounded-full"
+                style={{ background:bg, color:text, border:`1.5px solid ${border}` }}>
+                {label}
+              </span>
+            ))}
+          </div>
+
+        </div>{/* end right panel */}
+      </div>{/* end card */}
     </div>
   );
 }
