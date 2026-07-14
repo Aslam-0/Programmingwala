@@ -26,6 +26,23 @@ import { uploadGallery, uploadAdmissions, uploadNotes, uploadVideo } from '../mi
 
 const router = express.Router();
 
+import fs from 'fs';
+import { v2 as cloudinary } from 'cloudinary';
+
+const CLOUDINARY_ENABLED = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+if (CLOUDINARY_ENABLED) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+}
+
 async function assignFeesForStudent(studentId, className, isMock) {
   let course = null;
   if (isMock) {
@@ -1811,12 +1828,26 @@ router.post('/modules/:moduleId/lessons', uploadVideo.single('videoFile'), async
       module = await Module.findById(req.params.moduleId);
     }
     if (!module) return res.status(404).json({ success: false, message: 'Module not found' });
-
     let finalVideoUrl = videoUrl || '';
     if (req.file) {
-      finalVideoUrl = `/uploads/videos/${req.file.filename}`;
+      if (CLOUDINARY_ENABLED) {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            resource_type: 'video',
+            folder: 'kindergarten_videos'
+          });
+          finalVideoUrl = uploadResult.secure_url;
+          // Delete temporary file from local storage
+          fs.unlinkSync(req.file.path);
+        } catch (uploadError) {
+          console.error('Cloudinary upload failed:', uploadError);
+          // Fallback to local storage if Cloudinary upload fails
+          finalVideoUrl = `/uploads/videos/${req.file.filename}`;
+        }
+      } else {
+        finalVideoUrl = `/uploads/videos/${req.file.filename}`;
+      }
     }
-
     const payload = {
       module: req.params.moduleId,
       course: module.course,
@@ -1855,7 +1886,23 @@ router.put('/lessons/:id', uploadVideo.single('videoFile'), async (req, res) => 
     };
 
     if (req.file) {
-      updateData.videoUrl = `/uploads/videos/${req.file.filename}`;
+      if (CLOUDINARY_ENABLED) {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+            resource_type: 'video',
+            folder: 'kindergarten_videos'
+          });
+          updateData.videoUrl = uploadResult.secure_url;
+          // Delete temporary file from local storage
+          fs.unlinkSync(req.file.path);
+        } catch (uploadError) {
+          console.error('Cloudinary upload failed:', uploadError);
+          // Fallback to local storage if Cloudinary upload fails
+          updateData.videoUrl = `/uploads/videos/${req.file.filename}`;
+        }
+      } else {
+        updateData.videoUrl = `/uploads/videos/${req.file.filename}`;
+      }
     } else if (videoUrl) {
       updateData.videoUrl = videoUrl;
     }
