@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { ThemeProvider, useTheme } from './context/ThemeContext.jsx';
@@ -65,6 +65,77 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// Inner layout — must be inside <Router> so useLocation works
+function AppLayout({ pointer, glowY, glowX, isDark, onPointerMove }) {
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login';
+
+  return (
+    <div
+      onMouseMove={onPointerMove}
+      className={`relative flex min-h-screen flex-col overflow-x-hidden transition-colors duration-300 ${
+        isDark ? 'bg-slate-950 text-white' : 'bg-brandCream text-slate-800'
+      }`}
+    >
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-0 opacity-80"
+        style={{
+          background: isDark
+            ? `radial-gradient(380px circle at ${pointer.x}px ${pointer.y}px, rgba(56, 189, 248, 0.14), transparent 35%), radial-gradient(420px circle at 85% 18%, rgba(99, 102, 241, 0.12), transparent 26%), linear-gradient(135deg, rgba(2, 6, 23, 0.95), rgba(15, 23, 42, 0.98))`
+            : `radial-gradient(420px circle at ${pointer.x}px ${pointer.y}px, rgba(255, 112, 67, 0.10), transparent 35%), radial-gradient(460px circle at 85% 12%, rgba(79, 195, 247, 0.12), transparent 28%), linear-gradient(135deg, rgba(252, 251, 247, 0.96), rgba(243, 239, 233, 0.98))`
+        }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed left-[8%] top-[12%] h-40 w-40 rounded-full bg-cyan-400/8 blur-3xl"
+        style={{ y: glowY, x: glowX }}
+      />
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none fixed bottom-[10%] right-[6%] h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"
+        style={{ y: glowY, x: glowX }}
+      />
+      {!isLoginPage && <Navbar />}
+      <main className="relative z-10 flex-grow">
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/admissions" element={<Navigate to="/" replace />} />
+          <Route path="/programs" element={<Programs />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/calendar" element={<Calendar />} />
+          <Route path="/meetings" element={<Meetings />} />
+          <Route path="/fees" element={<Fees />} />
+          <Route path="/fee-structure" element={<Navigate to="/fees" replace />} />
+          <Route path="/brochure" element={<Brochure />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/practice" element={<Practice />} />
+          <Route path="/payment-demo" element={<RazorpayTestPage />} />
+
+          {/* LMS Routes */}
+          <Route path="/lms" element={<LMS />} />
+          <Route path="/lms/courses/:id" element={<CourseDetail />} />
+          <Route path="/lms/learn/:id" element={<LearningPage />} />
+          <Route path="/lms/dashboard" element={<StudentDashboard />} />
+
+          {/* Protected Portal Dashboards */}
+          <Route path="/dashboard/parent" element={<ProtectedRoute allowedRoles={['parent']}><ParentDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      {!isLoginPage && <Footer />}
+    </div>
+  );
+}
+
 function AppInner() {
   const [pointer, setPointer] = useState({ x: 0, y: 0 });
   const { scrollY } = useScroll();
@@ -80,92 +151,13 @@ function AppInner() {
   return (
     <AuthProvider>
       <Router>
-        <div
-          onMouseMove={handlePointerMove}
-          className={`relative flex min-h-screen flex-col overflow-x-hidden transition-colors duration-300 ${
-            isDark ? 'bg-slate-950 text-white' : 'bg-brandCream text-slate-800'
-          }`}
-        >
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-0 opacity-80"
-            style={{
-              background: isDark
-                ? `radial-gradient(380px circle at ${pointer.x}px ${pointer.y}px, rgba(56, 189, 248, 0.14), transparent 35%), radial-gradient(420px circle at 85% 18%, rgba(99, 102, 241, 0.12), transparent 26%), linear-gradient(135deg, rgba(2, 6, 23, 0.95), rgba(15, 23, 42, 0.98))`
-                : `radial-gradient(420px circle at ${pointer.x}px ${pointer.y}px, rgba(255, 112, 67, 0.10), transparent 35%), radial-gradient(460px circle at 85% 12%, rgba(79, 195, 247, 0.12), transparent 28%), linear-gradient(135deg, rgba(252, 251, 247, 0.96), rgba(243, 239, 233, 0.98))`
-            }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none fixed left-[8%] top-[12%] h-40 w-40 rounded-full bg-cyan-400/8 blur-3xl"
-            style={{ y: glowY, x: glowX }}
-          />
-          <motion.div
-            aria-hidden="true"
-            className="pointer-events-none fixed bottom-[10%] right-[6%] h-56 w-56 rounded-full bg-indigo-500/10 blur-3xl"
-            style={{ y: glowY, x: glowX }}
-          />
-          <Navbar />
-          <main className="relative z-10 flex-grow">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/admissions" element={<Navigate to="/" replace />} />
-              <Route path="/programs" element={<Programs />} />
-              <Route path="/facilities" element={<Facilities />} />
-              <Route path="/gallery" element={<Gallery />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/meetings" element={<Meetings />} />
-              <Route path="/fees" element={<Fees />} />
-              <Route path="/fee-structure" element={<Navigate to="/fees" replace />} />
-              <Route path="/brochure" element={<Brochure />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/practice" element={<Practice />} />
-              <Route path="/payment-demo" element={<RazorpayTestPage />} />
-
-              {/* LMS Routes */}
-              <Route path="/lms" element={<LMS />} />
-              <Route path="/lms/courses/:id" element={<CourseDetail />} />
-              <Route path="/lms/learn/:id" element={<LearningPage />} />
-              <Route 
-                path="/lms/dashboard" 
-                element={<StudentDashboard />}
-              />
-
-              {/* Protected Portal Dashboards */}
-              <Route 
-                path="/dashboard/parent" 
-                element={
-                  <ProtectedRoute allowedRoles={['parent']}>
-                    <ParentDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard/teacher" 
-                element={
-                  <ProtectedRoute allowedRoles={['teacher']}>
-                    <TeacherDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard/admin" 
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } 
-              />
-
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppLayout
+          pointer={pointer}
+          glowY={glowY}
+          glowX={glowX}
+          isDark={isDark}
+          onPointerMove={handlePointerMove}
+        />
       </Router>
     </AuthProvider>
   );
