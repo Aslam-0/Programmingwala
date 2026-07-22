@@ -38,7 +38,7 @@ export default function Footer() {
             </div>
           </div>
           <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Industry-focused dr. aslam coding education for students and professionals ready to grow in Java, MERN, C++, and frontend development.
+            Industry-focused dr. ravan coding education for students and professionals ready to grow in Java, MERN, C++, and frontend development.
           </p>
           {/* WhatsApp Chat Button */}
           <a
